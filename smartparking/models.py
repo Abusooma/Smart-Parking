@@ -86,7 +86,7 @@ class Parking(models.Model):
 
 class Reservation(models.Model):
     parking = models.ForeignKey(Parking, on_delete=models.CASCADE, related_name='reservations')
-    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, related_name='reservations')
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     date_arrive = models.DateTimeField()
     date_sortie = models.DateTimeField()
     is_expired = models.BooleanField(default=False)

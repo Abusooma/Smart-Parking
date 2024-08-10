@@ -16,6 +16,9 @@
        <div class="form-group">
          <select class="form-control" id="region-select">
            <option value="">Sélectionnez une région</option>
+           {% for region in regions %}
+             <option value="{{ region.id }}">{{ region.nom }}</option>
+           {% endfor %}
          </select>
        </div>
      </div>
@@ -28,128 +31,51 @@
    <div class="container my-5 main-content">
      <h2 class="mb-4">Emplacements de parking</h2>
      <div class="row" id="parking-locations">
-       <!-- Les cartes d'emplacement de parking seront insérées ici -->
+       {% for parking in parkings %}
+         <div class="col-md-4 mb-4 parking-card" data-region="{{ parking.region.id }}">
+           <div class="card">
+             <div class="card-body">
+               <h5 class="card-title">
+                 <i class="fas fa-map-marker-alt mr-2"></i>
+                 {{ parking.nom }}
+               </h5>
+               <p class="card-text">
+                 <i class="fas fa-car mr-2"></i>
+                 {{ parking.nombre_place_dispo }} places disponibles
+               </p>
+               <p class="card-text">
+                 <i class="fas fa-dollar-sign mr-2"></i>
+                 Tarif: {{ parking.tarif }} dinars/jour
+               </p>
+               <a href="{% url 'reservation' pk=parking.id %}" class="btn btn-primary">Réserver une place</a>
+             </div>
+           </div>
+         </div>
+       {% endfor %}
      </div>
    </div>
 {% endblock %}
 
 {% block extra_script %}
   <script>
-      // Récupération de l'URL de base de réservation depuis l'élément caché
-      const reservationUrlBase = document.getElementById('reservation-url-base').value;
-
-      // Données d'emplacement de parking (avec des ID)
-      const parkingLocations = {
-        "Centre-ville": [
-          {
-            id: 1,
-            availableSpots: 100,
-            availability: "24/7",
-          },
-          {
-            id: 2,
-            availableSpots: 75,
-            availability: "Lun-Ven 8h-18h",
-          },
-        ],
-        "Quartier nord": [
-          {
-            id: 3,
-            availableSpots: 50,
-            availability: "Tous les jours 7h-21h",
-          },
-          {
-            id: 4,
-            availableSpots: 80,
-            availability: "Lun-Dim 6h-22h",
-          },
-        ],
-        "Quartier central": [
-          {
-            id: 5,
-            availableSpots: 120,
-            availability: "Tous les jours 5h-23h",
-          },
-        ],
-        "Bord de rivière": [
-          {
-            id: 6,
-            availableSpots: 90,
-            availability: "Lun-Sam 8h-20h",
-          },
-          {
-            id: 7,
-            availableSpots: 65,
-            availability: "Tous les jours 6h-22h",
-          },
-        ],
-        Banlieue: [
-          {
-            id: 8,
-            availableSpots: 150,
-            availability: "Tous les jours 7h-21h",
-          },
-          {
-            id: 9,
-            availableSpots: 100,
-            availability: "Lun-Ven 6h-20h",
-          },
-        ],
-      };
-
-      // Fonction pour créer l'URL de réservation avec l'ID du parking
-      function createReservationUrl(parkingId) {
-        return reservationUrlBase.replace('/0/', `/${parkingId}/`);
-      }
-
-      // Fonction pour créer et insérer les cartes d'emplacement de parking
-      const parkingLocationsContainer = document.getElementById("parking-locations");
       const regionSelect = document.getElementById("region-select");
+      const parkingCards = document.querySelectorAll('.parking-card');
 
-      function displayParkingLocations(region) {
-        parkingLocationsContainer.innerHTML = "";
-
-        (parkingLocations[region] || []).forEach((location) => {
-          const card = document.createElement("div");
-          card.className = "col-md-4 mb-4";
-          card.innerHTML = `
-          <div class="card parking-card">
-            <div class="card-body">
-              <h5 class="card-title">
-                <i class="fas fa-map-marker-alt mr-2"></i>
-                Parking ${region}
-              </h5>
-              <p class="card-text">
-                <i class="fas fa-car mr-2"></i>
-                ${location.availableSpots} places disponibles
-              </p>
-              <p class="card-text">
-                <i class="fas fa-calendar-alt mr-2"></i>
-                ${location.availability}
-              </p>
-              <a href="${createReservationUrl(location.id)}" class="btn btn-primary">Réserver une place</a>
-            </div>
-          </div>
-        `;
-          parkingLocationsContainer.appendChild(card);
+      function filterParkings(regionId) {
+        parkingCards.forEach(card => {
+          if (regionId === '' || card.dataset.region === regionId) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
         });
       }
 
-      // Remplir les options du sélecteur de région
-      Object.keys(parkingLocations).forEach((region) => {
-        const option = document.createElement("option");
-        option.value = region;
-        option.textContent = region;
-        regionSelect.appendChild(option);
+      regionSelect.addEventListener("change", (event) => {
+        filterParkings(event.target.value);
       });
 
-      // Écouteur d'événement pour le sélecteur de région
-      regionSelect.addEventListener("change", () => {
-        const selectedRegion = regionSelect.value;
-        displayParkingLocations(selectedRegion);
-      });
-
-      // Affichage initial des emplacements de parking
-      displayParkingLocations("");
+      // Affichage initial de tous les parkings
+      filterParkings('');
   </script>
 {% endblock %}
