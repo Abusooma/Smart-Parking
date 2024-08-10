@@ -1,0 +1,193 @@
+/* Styles communs pour toutes les pages */
+:root {
+  --primary-color: #1c2331;
+  --secondary-color: #495057;
+  --bg-color: #f8f9fa;
+  --text-color: #333;
+  --link-color: #007bff;
+  --link-hover-color: #0056b3;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Raleway', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.content-wrapper {
+  flex: 1 0 auto;
+}
+
+.navbar {
+  background-color: var(--primary-color) !important;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #fff !important;
+}
+
+.navbar-nav .nav-link {
+  color: #fff !important;
+}
+
+.navbar-nav .nav-link:hover {
+  color: #ccc !important;
+}
+
+footer {
+  background-color: var(--primary-color);
+  color: #fff;
+  padding: 2rem 0;
+  flex-shrink: 0;
+}
+
+footer a {
+  color: #fff;
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: #ccc;
+}
+
+.btn-primary {
+  background-color: #1c2331;
+  border: none;
+}
+
+/* Styles spécifiques à la page d'accueil */
+.jumbotron {
+  background-color: var(--bg-color);
+  padding-bottom: 1rem;
+}
+
+.jumbotron h1 {
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--primary-color);
+}
+
+.parking-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.parking-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Styles spécifiques à la page de réservation */
+.reservation-form {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.reservation-info {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+/* Styles spécifiques à la page de paiement */
+.payment-form {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.payment-info {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+/* Styles spécifiques au tableau de bord administratif */
+.dashboard-wrapper {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  min-height: 100%;
+}
+
+#sidebar {
+  min-width: 250px;
+  max-width: 250px;
+  background: var(--primary-color);
+  color: #fff;
+  transition: all 0.3s;
+}
+
+#sidebar.active {
+  margin-left: -250px;
+}
+
+#sidebar .sidebar-header {
+  padding: 20px;
+  background: var(--secondary-color);
+}
+
+#sidebar ul.components {
+  padding: 20px 0;
+}
+
+#sidebar ul p {
+  color: #fff;
+  padding: 10px;
+}
+
+#sidebar ul li a {
+  padding: 10px;
+  font-size: 1.1em;
+  display: block;
+  color: #fff;
+  text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+  color: var(--primary-color);
+  background: #fff;
+}
+
+#sidebar ul li.active > a,
+a[aria-expanded="true"] {
+  color: #fff;
+  background: var(--secondary-color);
+}
+
+#content {
+  width: 100%;
+  padding: 20px;
+  min-height: 100vh;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-content {
+  padding: 20px;
+  flex: 1 0 auto;
+}
+
+@media (max-width: 768px) {
+  #sidebar {
+    margin-left: -250px;
+  }
+  #sidebar.active {
+    margin-left: 0;
+  }
+}

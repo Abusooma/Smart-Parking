@@ -1,0 +1,43 @@
+{% extends 'landing/main.html' %}
+
+{% load static %}
+
+{% block title %} Paiement {% endblock %}
+{% block content %}
+
+    <!-- Payment Section -->
+    <div class="container my-5 main-content">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="payment-form">
+            <h2 class="mb-4">Effectuer le paiement</h2>
+            <form id="payment-form">
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Nous l'utiliserons pour vous envoyer le code d'accès" required>
+              </div>
+              <div class="form-group">
+                <label for="card-number">Numéro de carte</label>
+                <input type="text" class="form-control" id="card-number" name="card-number" required>
+              </div>
+              <div class="form-group">
+                <label for="cvv">Code secret</label>
+                <input type="text" class="form-control" id="cvv" name="cvv" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Payer</button>
+            </form>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="payment-info">
+            <h3>Détails de la réservation</h3>
+            <p>Région : <span id="region-display"></span></p>
+            <p>Emplacement de parking : <span id="location-display"></span></p>
+            <p>Date d'arrivée : <span id="arrival-date-display"></span></p>
+            <p>Date de départ : <span id="departure-date-display"></span></p>
+            <p>Prix : <span id="price-display"></span> €</p>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}

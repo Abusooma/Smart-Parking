@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title> {%block title %}{% endblock %} - SmarkParking</title>
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap/css/bootstrap.min.css' %}"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'fontawesome/css/all.min.css' %}"
+    />
+   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  </head>
+  <body>
+    <div class="content-wrapper">
+      <!-- Barre de navigation -->
+      <nav class="navbar navbar-expand-lg">
+        <div class="container">
+          <a class="navbar-brand" href="{% url 'home' %}">SmarkParking</a>
+          <div class="navbar-nav ml-auto">
+            <a class="nav-link" href="/login">Connexion</a>
+          </div>
+        </div>
+      </nav>
+
+      {% block content %}{% endblock %}
+
+     
+    </div>
+     <!-- Pied de page -->
+      <footer>
+        <div class="container">
+          <div class="row">
+            <div class="col-md-6">
+              <p>&copy; 2023 SmarkParking. Tous droits réservés.</p>
+            </div>
+            <div class="col-md-6 text-md-right">
+              <a href="#">Politique de confidentialité</a> |
+              <a href="#">Conditions d'utilisation</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+  {% block extra_script %}
+  {% endblock %}
+  </body>
+</html>

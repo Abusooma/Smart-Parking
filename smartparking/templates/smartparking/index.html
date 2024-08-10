@@ -1,0 +1,155 @@
+{% extends 'landing/main.html' %}
+
+{% load static %}
+
+{% block title %} Home {% endblock %}
+
+{% block content %}
+   <!-- Section héroïque -->
+   <div class="jumbotron jumbotron-fluid">
+     <div class="container">
+       <h1 class="display-4">Trouvez et réservez des places de parking</h1>
+       <p class="lead">
+         SmarkParking vous facilite la recherche et la réservation de places
+         de parking dans votre région.
+       </p>
+       <div class="form-group">
+         <select class="form-control" id="region-select">
+           <option value="">Sélectionnez une région</option>
+         </select>
+       </div>
+     </div>
+   </div>
+
+   <!-- Élément caché pour stocker l'URL de base de réservation -->
+   <input type="hidden" id="reservation-url-base" value="{% url 'reservation' pk=0 %}">
+
+   <!-- Emplacements de parking -->
+   <div class="container my-5 main-content">
+     <h2 class="mb-4">Emplacements de parking</h2>
+     <div class="row" id="parking-locations">
+       <!-- Les cartes d'emplacement de parking seront insérées ici -->
+     </div>
+   </div>
+{% endblock %}
+
+{% block extra_script %}
+  <script>
+      // Récupération de l'URL de base de réservation depuis l'élément caché
+      const reservationUrlBase = document.getElementById('reservation-url-base').value;
+
+      // Données d'emplacement de parking (avec des ID)
+      const parkingLocations = {
+        "Centre-ville": [
+          {
+            id: 1,
+            availableSpots: 100,
+            availability: "24/7",
+          },
+          {
+            id: 2,
+            availableSpots: 75,
+            availability: "Lun-Ven 8h-18h",
+          },
+        ],
+        "Quartier nord": [
+          {
+            id: 3,
+            availableSpots: 50,
+            availability: "Tous les jours 7h-21h",
+          },
+          {
+            id: 4,
+            availableSpots: 80,
+            availability: "Lun-Dim 6h-22h",
+          },
+        ],
+        "Quartier central": [
+          {
+            id: 5,
+            availableSpots: 120,
+            availability: "Tous les jours 5h-23h",
+          },
+        ],
+        "Bord de rivière": [
+          {
+            id: 6,
+            availableSpots: 90,
+            availability: "Lun-Sam 8h-20h",
+          },
+          {
+            id: 7,
+            availableSpots: 65,
+            availability: "Tous les jours 6h-22h",
+          },
+        ],
+        Banlieue: [
+          {
+            id: 8,
+            availableSpots: 150,
+            availability: "Tous les jours 7h-21h",
+          },
+          {
+            id: 9,
+            availableSpots: 100,
+            availability: "Lun-Ven 6h-20h",
+          },
+        ],
+      };
+
+      // Fonction pour créer l'URL de réservation avec l'ID du parking
+      function createReservationUrl(parkingId) {
+        return reservationUrlBase.replace('/0/', `/${parkingId}/`);
+      }
+
+      // Fonction pour créer et insérer les cartes d'emplacement de parking
+      const parkingLocationsContainer = document.getElementById("parking-locations");
+      const regionSelect = document.getElementById("region-select");
+
+      function displayParkingLocations(region) {
+        parkingLocationsContainer.innerHTML = "";
+
+        (parkingLocations[region] || []).forEach((location) => {
+          const card = document.createElement("div");
+          card.className = "col-md-4 mb-4";
+          card.innerHTML = `
+          <div class="card parking-card">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-map-marker-alt mr-2"></i>
+                Parking ${region}
+              </h5>
+              <p class="card-text">
+                <i class="fas fa-car mr-2"></i>
+                ${location.availableSpots} places disponibles
+              </p>
+              <p class="card-text">
+                <i class="fas fa-calendar-alt mr-2"></i>
+                ${location.availability}
+              </p>
+              <a href="${createReservationUrl(location.id)}" class="btn btn-primary">Réserver une place</a>
+            </div>
+          </div>
+        `;
+          parkingLocationsContainer.appendChild(card);
+        });
+      }
+
+      // Remplir les options du sélecteur de région
+      Object.keys(parkingLocations).forEach((region) => {
+        const option = document.createElement("option");
+        option.value = region;
+        option.textContent = region;
+        regionSelect.appendChild(option);
+      });
+
+      // Écouteur d'événement pour le sélecteur de région
+      regionSelect.addEventListener("change", () => {
+        const selectedRegion = regionSelect.value;
+        displayParkingLocations(selectedRegion);
+      });
+
+      // Affichage initial des emplacements de parking
+      displayParkingLocations("");
+  </script>
+{% endblock %}
