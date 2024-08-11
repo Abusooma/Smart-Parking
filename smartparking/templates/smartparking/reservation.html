@@ -1,53 +1,70 @@
 {% extends 'landing/main.html' %}
-
 {% load static %}
 
-{% block title %} Reservation {% endblock %}
-{% block content %}
-  <!-- Reservation Section -->
-      <div class="container my-5 flex-grow-1">
-        <div class="row">
-          <div class="col-md-8">
-            <div class="reservation-form">
-              <h2 class="mb-4">Réservez votre place de parking</h2>
-              <form id="reservation-form">
-                <div class="form-group">
-                  <label for="arrival-date">Date d'arrivée</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="arrival-date"
-                    name="arrival-date"
-                    required
-                  />
-                </div>
-                <div class="form-group">
-                  <label for="departure-date">Date de départ</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="departure-date"
-                    name="departure-date"
-                    required
-                  />
-                </div>
-                <a type="submit" href="{% url 'paiement' %}" class="btn btn-primary btn-block">
-                  Réserver
-                </a>
-              </form>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="reservation-info">
-              <h3>Détails de la réservation</h3>
-              <p>Région : <span id="region-display"></span></p>
-              <p>
-                Emplacement de parking : <span id="location-display"></span>
-              </p>
-              <p>Prix : <span id="price-display"></span></p>
-            </div>
-          </div>
-        </div>
-      </div>
+{% block title %}Reservation{% endblock %}
 
+{% block content %}
+<div class="container my-5 flex-grow-1">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="reservation-form">
+        <h2 class="mb-4">Réservez votre place de parking</h2>
+        <form id="reservation-form" method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="id_date_arrive">Date d'arrivée</label>
+            <input type="date" class="form-control" id="id_date_arrive" name="date_arrive" required>
+          </div>
+          <div class="form-group">
+            <label for="id_date_sortie">Date de départ</label>
+            <input type="date" class="form-control" id="id_date_sortie" name="date_sortie" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Réserver</button>
+        </form>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="reservation-info w-100">
+        <h3 class="w-100">Détails de la réservation</h3>
+        <p><strong>Région : </strong><span id="region-display">{{ parking.region.nom }}</span></p>
+        <p><strong>Nom du Parking : </strong><span id="location-display">{{ parking.nom }}</span></p>
+        <p><strong>Prix : </strong><span id="price-display">0.00</span> Dinar</p>
+        <p><strong>Durée : </strong><span id="duration-display">0</span> jours</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    var parkingId = '{{ parking.id }}';
+    var calculatePriceUrl = "{% url 'calculate-price' %}";
+    
+    $(document).ready(function() {
+        function updatePrice() {
+            var dateArrive = $('#id_date_arrive').val();
+            var dateSortie = $('#id_date_sortie').val();
+            
+            if (dateArrive && dateSortie) {
+                $.ajax({
+                    url: calculatePriceUrl,
+                    data: {
+                        'parking_id': parkingId,
+                        'date_arrive': dateArrive,
+                        'date_sortie': dateSortie
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#price-display').text(data.price.toFixed(2));
+                        $('#duration-display').text(data.duration);
+                    }
+                });
+            }
+        }
+        
+        $('#id_date_arrive, #id_date_sortie').on('change', updatePrice);
+    });
+</script>
 {% endblock %}

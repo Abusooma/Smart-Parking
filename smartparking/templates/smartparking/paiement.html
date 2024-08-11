@@ -8,10 +8,11 @@
     <!-- Payment Section -->
     <div class="container my-5 main-content">
       <div class="row">
-        <div class="col-md-8">
+        <div class="col-md-7">
           <div class="payment-form">
             <h2 class="mb-4">Effectuer le paiement</h2>
-            <form id="payment-form">
+            <form id="payment-form" method="POST">
+                {% csrf_token %}
               <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" class="form-control" id="email" name="email" placeholder="Nous l'utiliserons pour vous envoyer le code d'accès" required>
@@ -28,14 +29,14 @@
             </form>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-5">
           <div class="payment-info">
             <h3>Détails de la réservation</h3>
-            <p>Région : <span id="region-display"></span></p>
-            <p>Emplacement de parking : <span id="location-display"></span></p>
-            <p>Date d'arrivée : <span id="arrival-date-display"></span></p>
-            <p>Date de départ : <span id="departure-date-display"></span></p>
-            <p>Prix : <span id="price-display"></span> €</p>
+            <p>Région : <span id="region-display"> {{ region_name }}</span></p>
+            <p>Nom du parking : <span id="location-display">{{ parking_name }}</span></p>
+            <p>Date d'arrivée : <span id="arrival-date-display">{{ date_arrive }}</span></p>
+            <p>Date de départ : <span id="departure-date-display">{{ date_sortie }}</span></p>
+            <p>Prix : <span id="price-display">{{prix}}</span> Dinars</p>
           </div>
         </div>
       </div>

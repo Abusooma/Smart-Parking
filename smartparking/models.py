@@ -85,12 +85,13 @@ class Parking(models.Model):
 
 
 class Reservation(models.Model):
-    parking = models.ForeignKey(Parking, on_delete=models.CASCADE, related_name='reservations')
+    parking = models.ForeignKey(Parking, on_delete=models.CASCADE, blank=True, related_name='reservations')
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     date_arrive = models.DateTimeField()
     date_sortie = models.DateTimeField()
     is_expired = models.BooleanField(default=False)
 
+    @property
     def verif_is_expired(self):
         if not self.is_expired and self.date_sortie < timezone.now() + timedelta(hours=24):
             self.is_expired = True
@@ -106,9 +107,17 @@ class Reservation(models.Model):
         random.shuffle(code)
         return ''.join(code)
 
+    @property
     def calculate_price(self):
-        duration = (self.date_sortie - self.date_arrive).total_seconds() / 3600
-        return self.parking.tarif * duration
+        duration = (self.date_sortie - self.date_arrive).days
+
+        if duration == 0:
+            duration += 1
+            
+        if (self.date_sortie - self.date_arrive).seconds > 0:
+            duration += 1
+
+        return float(self.parking.tarif) * duration 
 
     def __str__(self):
         return f"Réservation {self.id} pour {self.client} au {self.parking}"
