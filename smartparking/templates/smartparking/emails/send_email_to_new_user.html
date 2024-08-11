@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenue sur Smart Parking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #1c2331;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1c2331;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Bienvenue sur Smart Parking</h1>
+        </div>
+        <div class="content">
+            <p>Cher(e) nouvel(le) utilisateur(trice),</p>
+            <p>Nous sommes ravis de vous accueillir sur Smart Parking. Votre compte a été créé avec succès.</p>
+            <p>Voici vos informations de connexion :</p>
+            <ul>
+                <li><strong>Email :</strong> {{ user.email }}</li>
+                <li><strong>Mot de passe temporaire :</strong> {{ password }}</li>
+            </ul>
+            <p><strong>Important :</strong> Pour des raisons de sécurité, nous vous recommandons vivement de changer votre mot de passe dès votre première connexion.</p>
+            <p>Pour accéder à votre tableau de bord et gérer vos réservations, veuillez vous connecter à l'adresse suivante :</p>
+            <a href="{{ login_url }}" class="btn">Se connecter</a>
+            <p>Dans votre tableau de bord, vous pourrez :</p>
+            <ul>
+                <li>Consulter vos réservations en cours</li>
+                <li>Modifier ou annuler vos réservations</li>
+                <li>Voir l'historique de vos stationnements</li>
+                <li>Mettre à jour vos informations personnelles</li>
+            </ul>
+            <p>Si vous avez des questions ou besoin d'assistance, n'hésitez pas à contacter notre service client.</p>
+        </div>
+        <div class="footer">
+            <p>Ceci est un e-mail automatique, merci de ne pas y répondre.</p>
+            <p>&copy; 2024 Smart Parking. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+</html>

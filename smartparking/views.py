@@ -7,6 +7,7 @@ from .models import Region, Parking, Client, Reservation
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from .utils import generate_password, format_date
+from .emails import email_for_new_user, email_confirm_reservation
 
 
 def home_view(request):
@@ -74,20 +75,20 @@ def paiement_view(request):
             password = generate_password()
             user.set_password(password)
             user.save()
-            # Ici, vous devriez envoyer un email à l'utilisateur avec son mot de passe
-            # Pour l'instant, nous allons juste l'afficher dans la console
-            print(f"Nouveau mot de passe pour {email}: {password}")
-
+            email_for_new_user(request, user, password)
+            
+    
         client_profile, _ = Client.objects.get_or_create(user=user)
 
         # Création de Reservation
-        Reservation.objects.create(
+        reservation = Reservation.objects.create(
             parking=parking,
             client=client_profile,
             date_arrive=date_arrive,
             date_sortie=date_sortie
         )
 
+        email_confirm_reservation(request, user, reservation)
         # Nettoyage de la session
         for key in ['parking_id', 'date_arrive', 'date_sortie', 'price']:
             request.session.pop(key, None)

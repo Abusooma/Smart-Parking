@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de réservation - Smart Parking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #1c2331;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #6c757d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #1c2331;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Confirmation de réservation</h1>
+        </div>
+        <div class="content">
+            <p>Hola...!</p>
+            <p>Nous vous remercions pour votre réservation. Voici les détails :</p>
+            <ul>
+                <li><strong>Parking :</strong> {{ reservation.parking.nom }}</li>
+                <li><strong>Date d'arrivée :</strong> {{ reservation.date_arrive|date:"d/m/Y H:i" }}</li>
+                <li><strong>Date de départ :</strong> {{ reservation.date_sortie|date:"d/m/Y H:i" }}</li>
+                <li><strong>Prix total :</strong> {{ reservation.calculate_price }} Dinar</li>
+                <li><strong>Code d'accès :</strong> {{ reservation.access_code }}</li>
+            </ul>
+            <p>Veuillez conserver précieusement ce code d'accès, il vous sera demandé à l'entrée du parking.</p>
+            <p>Nous vous souhaitons un agréable stationnement.</p>
+            <a href="#" class="btn">Voir ma réservation</a>
+        </div>
+        <div class="footer">
+            <p>Ceci est un e-mail automatique, merci de ne pas y répondre.</p>
+            <p>&copy; 2024 Smart Parking. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+</html>
