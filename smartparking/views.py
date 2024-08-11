@@ -1,5 +1,3 @@
-import random
-import string
 from math import ceil
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -8,14 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import Region, Parking, Client, Reservation
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-
-def format_date(da, ds):
-    return da.strftime('%d %B %Y'), ds.strftime('%d %B %Y')
-
-
-def generate_password(length=12):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(random.choice(characters) for i in range(length))
+from .utils import generate_password, format_date
 
 
 def home_view(request):
