@@ -39,6 +39,7 @@ class CustomUser(AbstractUser):
 
     username = None
     email = models.EmailField(_('email address'), unique=True)
+    is_new_user = models.BooleanField(default=True)
     user_type = models.CharField(max_length=50, choices=USER_TYPE_CHOICES)
 
     objects = CustomUserManager()
@@ -51,7 +52,7 @@ class CustomUser(AbstractUser):
         verbose_name_plural = _('Users')
 
     def __str__(self):
-        return self.email
+        return self.email or 'N/A'
     
 
 class Client(models.Model):
@@ -66,7 +67,7 @@ class Region(models.Model):
     nom = models.CharField(max_length=150)
 
     def __str__(self):
-        return self.nom
+        return self.nom or 'N/A'
 
 
 class Parking(models.Model):
@@ -101,7 +102,7 @@ class Reservation(models.Model):
         return self._generate_access_code()
 
     def _generate_access_code(self, lenth_digit=4, length_char=2):
-        digits = random.choices(string.digits, k=lenth_digit)
+        digits = random.choices(string.digits, k=lenth_digit) 
         chars = random.choices(string.ascii_uppercase, k=length_char)
         code = digits + chars
         random.shuffle(code)
@@ -113,7 +114,7 @@ class Reservation(models.Model):
 
         if duration == 0:
             duration += 1
-            
+
         if (self.date_sortie - self.date_arrive).seconds > 0:
             duration += 1
 

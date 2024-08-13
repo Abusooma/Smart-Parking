@@ -58,8 +58,8 @@
             <p>Nous vous remercions pour votre réservation. Voici les détails :</p>
             <ul>
                 <li><strong>Parking :</strong> {{ reservation.parking.nom }}</li>
-                <li><strong>Date d'arrivée :</strong> {{ reservation.date_arrive|date:"d/m/Y H:i" }}</li>
-                <li><strong>Date de départ :</strong> {{ reservation.date_sortie|date:"d/m/Y H:i" }}</li>
+                <li><strong>Date d'arrivée :</strong> {{ reservation.date_arrive|date:"d/m/Y" }}</li>
+                <li><strong>Date de départ :</strong> {{ reservation.date_sortie|date:"d/m/Y" }}</li>
                 <li><strong>Prix total :</strong> {{ reservation.calculate_price }} Dinar</li>
                 <li><strong>Code d'accès :</strong> {{ reservation.access_code }}</li>
             </ul>

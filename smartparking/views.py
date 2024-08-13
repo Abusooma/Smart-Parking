@@ -1,4 +1,5 @@
 from math import ceil
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from datetime import datetime
@@ -19,6 +20,9 @@ def home_view(request):
     }
     return render(request, 'smartparking/index.html', context=context)
 
+
+def login_view(request):
+    return render(request, 'smartparking/login.html')
 
 def reservation_view(request, *args, **kwargs):
     pk = kwargs.get('pk')
@@ -54,8 +58,8 @@ def paiement_view(request):
         return redirect('home')
 
     parking = get_object_or_404(Parking, pk=parking_id)
-    date_arrive = datetime.strptime(date_arrive, '%Y-%m-%d')
-    date_sortie = datetime.strptime(date_sortie, '%Y-%m-%d')
+    date_arrive = timezone.make_aware(datetime.strptime(date_arrive, '%Y-%m-%d'))
+    date_sortie = timezone.make_aware(datetime.strptime(date_sortie, '%Y-%m-%d'))
 
     region_name = parking.region.nom
     parking_name = parking.nom
@@ -76,6 +80,10 @@ def paiement_view(request):
             user.set_password(password)
             user.save()
             email_for_new_user(request, user, password)
+        
+        else:
+            user.is_new_user = False
+            user.save()
             
     
         client_profile, _ = Client.objects.get_or_create(user=user)
@@ -93,7 +101,7 @@ def paiement_view(request):
         for key in ['parking_id', 'date_arrive', 'date_sortie', 'price']:
             request.session.pop(key, None)
 
-        return redirect('home')
+        return redirect('confirm_reservation', reservation_id=reservation.id)
 
     context = {
         'region_name': region_name,
@@ -104,6 +112,18 @@ def paiement_view(request):
     }
 
     return render(request, 'smartparking/paiement.html', context=context)
+
+
+def reservation_confirmation(request, reservation_id):
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    is_new_user = reservation.client.user.is_new_user
+
+    context = {
+        'reservation': reservation,
+        'is_new_user': is_new_user,
+    }
+
+    return render(request, 'smartparking/confirme_reservation.html', context)
 
 
 def calculate_price(request):

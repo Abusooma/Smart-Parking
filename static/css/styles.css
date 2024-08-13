@@ -191,3 +191,69 @@ a[aria-expanded="true"] {
     margin-left: 0;
   }
 }
+
+
+/* Styles for the confirmation page */
+.confirmation-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.confirmation-card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.confirmation-card:hover {
+    transform: translateY(-5px);
+}
+
+.confirmation-icon {
+    font-size: 5rem;
+    color: #28a745;
+    margin-bottom: 1rem;
+}
+
+.card-title {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    padding: 10px 30px;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+}
+
+.alert-info {
+    background-color: #e1f5fe;
+    border-color: #b3e5fc;
+    color: #01579b;
+}
+
+.alert-info .alert-heading {
+    color: #01579b;
+}
+
+@media (max-width: 768px) {
+    .confirmation-container {
+        min-height: auto;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+}
+/* PAGE LOGIN */
+
+.card .bg-dark-login{
+  background-color: var(--primary-color);
+}
