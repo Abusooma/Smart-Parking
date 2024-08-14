@@ -4,8 +4,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title> {%block title %}{% endblock %} - SmarkParking</title>
-   <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <title>{%block title %}{% endblock %} - SmarkParking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap"
@@ -15,44 +15,86 @@
       rel="stylesheet"
       href="{% static 'bootstrap/css/bootstrap.min.css' %}"
     />
-    <link
-      rel="stylesheet"
-      href="{% static 'fontawesome/css/all.min.css' %}"
-    />
-   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
   </head>
   <body>
     <div class="content-wrapper">
-      <!-- Barre de navigation -->
+       <!-- Barre de navigation -->
       <nav class="navbar navbar-expand-lg">
         <div class="container">
           <a class="navbar-brand" href="{% url 'home' %}">SmarkParking</a>
           <div class="navbar-nav ml-auto">
-            <a class="nav-link" href="{% url 'login' %}">Connexion</a>
+            {% if user.is_authenticated %}
+              <div class="profile-dropdown">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <div class="profile-dropdown-content">
+                  <a href="{% url 'dashboard' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                  <a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Déconnexion</a>
+                </div>
+              </div>
+            {% else %}
+              <a class="nav-link" href="{% url 'login' %}">Connexion</a>
+              <a class="nav-link" href="">S'inscrire</a>
+            {% endif %}
           </div>
         </div>
       </nav>
-
-      {% block content %}{% endblock %}
-
      
+      {% if messages %}
+      <div
+        id="message-container"
+        style="
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1050;
+          width: 80%;
+          max-width: 400px;
+          height: 200px;
+        "
+      >
+        {% for message in messages %}
+        <div
+          class="alert alert-{{ message.tags }} alert-dismissible fade show"
+          role="alert"
+        >
+          <strong>
+            {% if message.tags == 'success' %}
+            <i class="fas fa-check-circle"></i> Succès! 
+            {% elif message.tags == 'danger' %} 
+            <i class="fas fa-exclamation-circle"></i> Erreur! 
+            {% elif message.tags == 'warning' %}
+            <i class="fas fa-exclamation-triangle"></i> Attention! 
+            {% elif message.tags == 'info' %}
+            <i class="fas fa-info-circle"></i> Information! 
+            {% endif %}
+          </strong>
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} 
+      
+      {% block content %}{% endblock %}
     </div>
-     <!-- Pied de page -->
-      <footer>
-        <div class="container">
-          <div class="row">
-            <div class="col-md-6">
-              <p>&copy; 2024 SmarkParking. Tous droits réservés.</p>
-            </div>
-            <div class="col-md-6 text-md-right">
-              <a href="#">Politique de confidentialité</a> |
-              <a href="#">Conditions d'utilisation</a>
-            </div>
+    <!-- Pied de page -->
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="col-md-6">
+            <p>&copy; 2024 SmarkParking. Tous droits réservés.</p>
+          </div>
+          <div class="col-md-6 text-md-right">
+            <a href="#">Politique de confidentialité</a> |
+            <a href="#">Conditions d'utilisation</a>
           </div>
         </div>
-      </footer>
-      <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-  {% block extra_script %}
-  {% endblock %}
+      </div>
+    </footer>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_script %} {% endblock %}
   </body>
 </html>

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from django.core.mail.utils import DNS_NAME
 from pathlib import Path
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +28,10 @@ SECRET_KEY = 'django-insecure-l@og^f&ms4un&!4t5)u@@^#t(f7ds21ssp(_gd77#womuzn2bc
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+}
 
 
 # Application definition
@@ -116,6 +121,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -127,6 +136,9 @@ TIME_ZONE = 'Africa/Tunis'
 USE_I18N = True
 
 USE_TZ = True
+
+# URL DE LA VUE DE CONNEXION
+LOGIN_URL = '/login/'
 
 
 # Static files (CSS, JavaScript, Images)

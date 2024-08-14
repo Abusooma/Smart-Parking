@@ -1,0 +1,75 @@
+{% extends 'dashboard/main.html' %}
+{% load static %}
+
+{% block title %} Dashboard Admin{% endblock %}
+
+{% block content %} 
+ <div class="container-fluid dashboard-content">
+        <h2 class="mb-4">Tableau de bord</h2>
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card text-white bg-primary">
+              <div class="card-body">
+                <h5 class="card-title">Gérants</h5>
+                <p class="card-text display-4">25</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-white bg-success">
+              <div class="card-body">
+                <h5 class="card-title">Clients</h5>
+                <p class="card-text display-4">1,234</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-white bg-warning">
+              <div class="card-body">
+                <h5 class="card-title">Réservations</h5>
+                <p class="card-text display-4">789</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-white bg-info">
+              <div class="card-body">
+                <h5 class="card-title">Revenu</h5>
+                <p class="card-text display-4">15,678€</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activities -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                Activités récentes
+              </div>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item">Nouvelle réservation - Client ID: 1234</li>
+                <li class="list-group-item">Mise à jour du profil - Gérant ID: 56</li>
+                <li class="list-group-item">Annulation de réservation - Client ID: 789</li>
+                <li class="list-group-item">Nouveau client inscrit - Client ID: 2345</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                Parkings les plus populaires
+              </div>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item">Centre-ville - 95% d'occupation</li>
+                <li class="list-group-item">Quartier Nord - 87% d'occupation</li>
+                <li class="list-group-item">Bord de rivière - 82% d'occupation</li>
+                <li class="list-group-item">Quartier Central - 78% d'occupation</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+{% endblock %}

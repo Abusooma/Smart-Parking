@@ -5,7 +5,6 @@
 {% block title %} Home {% endblock %}
 
 {% block content %}
-   <!-- Section héroïque -->
    <div class="jumbotron jumbotron-fluid">
      <div class="container">
        <h1 class="display-4">Trouvez et réservez des places de parking</h1>
@@ -23,11 +22,7 @@
        </div>
      </div>
    </div>
-
-   <!-- Élément caché pour stocker l'URL de base de réservation -->
    <input type="hidden" id="reservation-url-base" value="{% url 'reservation' pk=0 %}">
-
-   <!-- Emplacements de parking -->
    <div class="container my-5 main-content">
      <h2 class="mb-4">Emplacements de parking</h2>
      <div class="row" id="parking-locations">
@@ -60,7 +55,6 @@
   <script>
       const regionSelect = document.getElementById("region-select");
       const parkingCards = document.querySelectorAll('.parking-card');
-
       function filterParkings(regionId) {
         parkingCards.forEach(card => {
           if (regionId === '' || card.dataset.region === regionId) {
@@ -74,8 +68,6 @@
       regionSelect.addEventListener("change", (event) => {
         filterParkings(event.target.value);
       });
-
-      // Affichage initial de tous les parkings
       filterParkings('');
   </script>
 {% endblock %}

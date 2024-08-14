@@ -8,12 +8,13 @@
   --link-hover-color: #0056b3;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
-  font-family: 'Raleway', sans-serif;
+  font-family: "Raleway", sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   display: flex;
@@ -192,68 +193,155 @@ a[aria-expanded="true"] {
   }
 }
 
-
 /* Styles for the confirmation page */
 .confirmation-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .confirmation-card {
-    border: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border-radius: 15px;
-    overflow: hidden;
-    transition: transform 0.3s ease;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
 }
 
 .confirmation-card:hover {
-    transform: translateY(-5px);
+  transform: translateY(-5px);
 }
 
 .confirmation-icon {
-    font-size: 5rem;
-    color: #28a745;
-    margin-bottom: 1rem;
+  font-size: 5rem;
+  color: #28a745;
+  margin-bottom: 1rem;
 }
 
 .card-title {
-    color: var(--primary-color);
-    font-weight: 700;
+  color: var(--primary-color);
+  font-weight: 700;
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
-    border: none;
-    padding: 10px 30px;
-    font-size: 1.1rem;
-    transition: background-color 0.3s ease;
+  background-color: var(--primary-color);
+  border: none;
+  padding: 10px 30px;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease;
 }
 
 .btn-primary:hover {
-    background-color: var(--secondary-color);
+  background-color: var(--secondary-color);
 }
 
 .alert-info {
-    background-color: #e1f5fe;
-    border-color: #b3e5fc;
-    color: #01579b;
+  background-color: #e1f5fe;
+  border-color: #b3e5fc;
+  color: #01579b;
 }
 
 .alert-info .alert-heading {
-    color: #01579b;
+  color: #01579b;
 }
 
 @media (max-width: 768px) {
-    .confirmation-container {
-        min-height: auto;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
+  .confirmation-container {
+    min-height: auto;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
 }
-/* PAGE LOGIN */
 
-.card .bg-dark-login{
+/* Styles pour la page de connexion */
+.login-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+}
+
+.login-card .card-title {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.login-card .input-group-text {
   background-color: var(--primary-color);
+  border: none;
+  color: #fff;
+}
+
+.login-card .form-control {
+  border-left: none;
+}
+
+.login-card .btn-primary {
+  background-color: var(--primary-color);
+  border: none;
+  padding: 10px 30px;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease;
+}
+
+.login-card .btn-primary:hover {
+  background-color: var(--secondary-color);
+}
+
+.login-card .card-footer {
+  background-color: #f8f9fa;
+  border-top: none;
+}
+
+.login-card .card-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.login-card .card-footer a:hover {
+  color: var(--secondary-color);
+}
+
+
+/* styles pour le menu déroulant du profil */
+.profile-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.profile-dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.profile-dropdown-content a:hover {
+  background-color: #f1f1f1;
+}
+
+.profile-dropdown:hover .profile-dropdown-content {
+  display: block;
+}
+
+.profile-icon {
+  font-size: 1.7em;
+  cursor: pointer;
+  color: #f1f1f1;
 }

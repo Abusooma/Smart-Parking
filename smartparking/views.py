@@ -1,14 +1,18 @@
 from math import ceil
+from django.contrib import messages
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from datetime import datetime
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Region, Parking, Client, Reservation
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from .utils import generate_password, format_date
 from .emails import email_for_new_user, email_confirm_reservation
+from .forms import CustomLoginForm
+from django.contrib.auth import logout, login, authenticate
 
 
 def home_view(request):
@@ -22,7 +26,32 @@ def home_view(request):
 
 
 def login_view(request):
-    return render(request, 'smartparking/login.html')
+    if request.method == 'POST':
+        form = CustomLoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=email, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, 'Connexion reussie')
+                return redirect('dashboard')
+            else:
+                messages.error(
+                    request, "Une erreur s'est produite lors de la connexion.")
+        else:
+            for error in form.non_field_errors():
+                messages.error(request, error)
+    else:
+        form = CustomLoginForm()
+
+    return render(request, 'smartparking/login.html', {'form': form})
+
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'Vous avez été déconnecté avec succès.')
+    return redirect('home')
 
 def reservation_view(request, *args, **kwargs):
     pk = kwargs.get('pk')
@@ -156,3 +185,7 @@ def calculate_price(request):
         })
     except Exception as e:
         return JsonResponse({'error': 'Une erreur est survenue'}, status=500)
+
+@login_required
+def dashboard_view(request):
+    return render(request, 'smartparking/dashboard.html')

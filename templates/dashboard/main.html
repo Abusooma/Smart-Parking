@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title> {% block title %}{% endblock %} - SmartParking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap/css/bootstrap.min.css' %}"
+    />
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <!-- Sidebar -->
+      <nav id="sidebar">
+        <div class="sidebar-header">
+          <h3><a href="{% url 'home' %}" class="text-decoration-none text-white">SmartParking</a></h3>
+        </div>
+        <ul class="list-unstyled components">
+          <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <a href="{% url 'dashboard' %}">
+              <i class="fas fa-home"></i> Accueil
+            </a>
+          </li>
+          <li class="{% if request.resolver_match.url_name == 'gerants' %}active{% endif %}">
+            <a href="#"><i class="fas fa-user-tie"></i> Gérants</a>
+          </li>
+          <li class="{% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
+            <a href="#"><i class="fas fa-users"></i> Clients</a>
+          </li>
+          <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
+            <a href="#"><i class="fas fa-calendar-check"></i> Réservations</a>
+          </li>
+          <li class="{% if request.resolver_match.url_name == 'regions_parkings' %}active{% endif %}">
+            <a href="#"><i class="fas fa-map-marker-alt"></i> Régions et Parkings</a>
+          </li>
+          <li class="{% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
+            <a href="#"><i class="fas fa-cog"></i> Paramètres</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Page Content -->
+      <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container-fluid">
+            <button type="button" id="sidebarCollapse" class="btn btn-info">
+              <i class="fas fa-align-left"></i>
+              <span></span>
+            </button>
+            <div class="ml-auto">
+              <div class="profile-dropdown">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <div class="profile-dropdown-content">
+                  <a href="#"><i class="fas fa-cog"></i> Paramètres</a>
+                  <a href="#"
+                    ><i class="fas fa-sign-out-alt"></i> Déconnexion</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        
+      {% if messages %}
+      <div
+        id="message-container"
+        style="
+          position: fixed;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1050;
+          width: 80%;
+          max-width: 400px;
+          height: 200px;
+        "
+      >
+        {% for message in messages %}
+        <div
+          class="alert alert-{{ message.tags }} alert-dismissible fade show"
+          role="alert"
+        >
+          <strong>
+            {% if message.tags == 'success' %}
+            <i class="fas fa-check-circle"></i> Succès! 
+            {% elif message.tags == 'danger' %} 
+            <i class="fas fa-exclamation-circle"></i> Erreur! 
+            {% elif message.tags == 'warning' %}
+            <i class="fas fa-exclamation-triangle"></i> Attention! 
+            {% elif message.tags == 'info' %}
+            <i class="fas fa-info-circle"></i> Information! 
+            {% endif %}
+          </strong>
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} 
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+
+    {% block modals %}{% endblock %}
+
+    <script src="{% static 'bootstrap/js/jquery-3.6.0.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/popper.min.js' %}"></script>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_script %}{% endblock %}
+  </body>
+</html>

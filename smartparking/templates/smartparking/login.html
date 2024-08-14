@@ -7,29 +7,48 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-dark-login text-white">
-                    <h4 class="mb-0">Connexion</h4>
-                </div>
+            <div class="card login-card">
                 <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Connexion</h2>
                     <form method="post" action="">
                         {% csrf_token %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-danger">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
                         <div class="form-group mb-3">
-                            <label for="email">Adresse e-mail</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                {{ form.email }}
+                            </div>
+                            {% if form.email.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="form-group mb-3">
-                            <label for="password">Mot de passe</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                {{ form.password }}
+                            </div>
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
-                        <div class="form-group form-check mb-3">
-                            <input type="checkbox" class="form-check-input" id="remember-me" name="remember-me">
-                            <label class="form-check-label" for="remember-me">Se souvenir de moi</label>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+                        <button type="submit" class="btn btn-primary btn-block w-100">Se connecter</button>
                     </form>
                 </div>
-                <div class="card-footer">
+                <div class="card-footer text-center">
                     <div class="d-flex justify-content-between">
                         <a href="" class="text-dark">Mot de passe oublié ?</a>
                         <a href="" class="text-dark">Créer un compte</a>
