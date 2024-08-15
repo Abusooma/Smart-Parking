@@ -1,3 +1,8 @@
+from django.core import serializers
+from django.shortcuts import render, get_object_or_404
+import json
+from .models import Gerant, Parking
+from django.views.decorators.http import require_http_methods
 from math import ceil
 from django.contrib import messages
 from django.utils import timezone
@@ -6,14 +11,18 @@ from django.contrib.auth import get_user_model
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Region, Parking, Client, Reservation
+from .models import Region, Parking, Client, Reservation, Gerant, Client
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from .utils import generate_password, format_date
 from .emails import email_for_new_user, email_confirm_reservation
 from .forms import CustomLoginForm
 from django.contrib.auth import logout, login, authenticate
+import locale
 
+User = get_user_model()
+
+locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
 def home_view(request):
     regions = Region.objects.all()
@@ -52,6 +61,7 @@ def logout_view(request):
     logout(request)
     messages.success(request, 'Vous avez été déconnecté avec succès.')
     return redirect('home')
+
 
 def reservation_view(request, *args, **kwargs):
     pk = kwargs.get('pk')
@@ -188,4 +198,150 @@ def calculate_price(request):
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'smartparking/dashboard.html')
+    parkings = Parking.objects.all()
+    reservations = Reservation.objects.all()
+    total_gerant = Gerant.objects.all().count()
+    total_reservation = Reservation.objects.all().count()
+    total_client = Client.objects.all().count()
+    total_revenu = sum(reservation.calculate_price for reservation in reservations)
+    parking_populaires = [parking for parking in parkings if parking.taux_occupation >= 10]
+
+    context = {
+        'total_gerant': total_gerant,
+        'total_client': total_client,
+        'total_reservation': total_reservation,
+        'total_revenu': total_revenu,
+        'parking_populaires': parking_populaires,
+        'recervation_recentes': reservations[:4]
+    }
+    return render(request, 'smartparking/dashboard.html', context=context)
+
+
+def gestion_gerant(request):
+    return render(request, 'smartparking/gestion_gerant.html')
+
+
+def get_gerants_data(request):
+    gerants = Gerant.objects.all().select_related(
+        'user').prefetch_related('parkings')
+
+    gerants_data = []
+    for gerant in gerants:
+        # Formater la date
+        date_embauche = gerant.date_embauche.strftime("%d %B %Y")
+        # Corriger les caractères spéciaux
+        date_embauche = date_embauche.encode('latin1').decode('utf-8')
+
+        gerants_data.append({
+            'id': gerant.id,
+            'nom': gerant.user.get_full_name(),
+            'email': gerant.user.email,
+            'parkings': [parking.nom for parking in gerant.parkings.all()],
+            'date_embauche': date_embauche,  # Date formatée
+        })
+        # Trié par ordre decroissant
+        gerants_data = sorted(gerants_data, key=lambda x: x['id'], reverse=True)
+
+    return JsonResponse({'gerants': gerants_data})
+
+
+@require_http_methods(["POST"])
+def add_gerant(request):
+    data = json.loads(request.body)
+    try:
+        user, created = User.objects.get_or_create(
+            email=data['email'],
+            defaults={'user_type': 'gerant'}
+        )
+        if created:
+            password = generate_password()
+            user.set_password(password)
+            user.save()
+        else:
+            raise ValueError("Un utilisateur avec cette adresse email existe déjà")
+
+        date_embauche = data['date_embauche']
+        date_embauche = timezone.make_aware(datetime.strptime(date_embauche, '%Y-%m-%d'))
+        gerant = Gerant.objects.create(
+            user=user,
+            date_embauche=date_embauche
+        )
+        parking_ids = data.get('parkings', [])
+        gerant.parkings.set(parking_ids)
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Gérant ajouté avec succès.',
+            'gerant': {
+                'id': gerant.id,
+                'name': user.get_full_name(),
+                'email': user.email,
+                'parkings': list(gerant.parkings.values_list('nom', flat=True)),
+                'date_embauche': gerant.date_embauche.strftime('%Y-%m-%d')
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@require_http_methods(["POST"])
+def update_gerant(request, gerant_id):
+    gerant = get_object_or_404(Gerant, id=gerant_id)
+    data = json.loads(request.body)
+    try:
+        user = gerant.user
+        user.email = data['email']
+        user.save()
+
+        date_embauche = data['date_embauche']
+        date_embauche = timezone.make_aware(
+            datetime.strptime(date_embauche, '%Y-%m-%d'))
+
+        gerant.date_embauche = date_embauche
+        gerant.save()
+
+        parking_ids = data.get('parkings', [])
+        gerant.parkings.set(parking_ids)
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Gérant mis à jour avec succès.',
+            'gerant': {
+                'id': gerant.id,
+                'name': user.get_full_name(),
+                'email': user.email,
+                'parkings': list(gerant.parkings.values_list('nom', flat=True)),
+                # Format YYYY-MM-DD
+                'date_embauche': gerant.date_embauche.strftime('%Y-%m-%d')
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+@require_http_methods(["POST"])
+def delete_gerant(request, gerant_id):
+    gerant = get_object_or_404(Gerant, id=gerant_id)
+    try:
+        user = gerant.user
+        gerant.delete()
+        user.delete()
+        return JsonResponse({'status': 'success', 'message': 'Gérant supprimé avec succès.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+
+def get_parkings(request):
+    parkings = Parking.objects.filter(actif=True).values('id', 'nom')
+    return JsonResponse(list(parkings), safe=False)
+
+
+def get_gerant(request, gerant_id):
+    gerant = get_object_or_404(Gerant, id=gerant_id)
+    return JsonResponse({
+        'id': gerant.id,
+        'email': gerant.user.email,
+        'parkings': list(gerant.parkings.values_list('id', flat=True)),
+        # Format YYYY-MM-DD
+        'date_embauche': gerant.date_embauche.strftime('%Y-%m-%d')
+    })

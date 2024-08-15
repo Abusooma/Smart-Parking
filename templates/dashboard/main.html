@@ -16,6 +16,7 @@
       href="{% static 'bootstrap/css/bootstrap.min.css' %}"
     />
     <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
   </head>
   <body>
@@ -32,7 +33,7 @@
             </a>
           </li>
           <li class="{% if request.resolver_match.url_name == 'gerants' %}active{% endif %}">
-            <a href="#"><i class="fas fa-user-tie"></i> Gérants</a>
+            <a href="{% url 'gerants' %}"><i class="fas fa-user-tie"></i> Gérants</a>
           </li>
           <li class="{% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
             <a href="#"><i class="fas fa-users"></i> Clients</a>
@@ -113,10 +114,31 @@
 
     {% block modals %}{% endblock %}
 
-    <script src="{% static 'bootstrap/js/jquery-3.6.0.min.js' %}"></script>
-    <script src="{% static 'bootstrap/js/popper.min.js' %}"></script>
-    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <script src="{% static 'js/main.js' %}"></script>
-    {% block extra_script %}{% endblock %}
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+  <script>
+    $.ajaxSetup({
+    headers: { "X-CSRFToken": getCookie("csrftoken") }
+});
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+  </script>
+  {% block extra_script %}{% endblock %}
   </body>
 </html>

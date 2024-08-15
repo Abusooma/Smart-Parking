@@ -21,12 +21,12 @@
                     {% endif %}
                     
                     <div class="mt-5">
-                        <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Accéder à mon tableau de bord</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Accéder à mon tableau de bord</a>
                     </div>
                     
                     {% if not is_new_user %}
                     <p class="mt-3">
-                        <a href="" class="text-muted">Déjà un compte? Connectez-vous ici</a>
+                        <a href="" class="text-muted">Pas de compte? Inscrivez-vous ici</a>
                     </p>
                     {% endif %}
                 </div>

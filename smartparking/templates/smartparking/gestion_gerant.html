@@ -1,0 +1,516 @@
+{% extends 'dashboard/main.html' %} {% load static %} {% block title %}Gestion
+des gérants{% endblock %} {% block content %}
+<div class="container-fluid dashboard-content">
+  <h2 class="mb-4">Gestion des gérants</h2>
+  <button
+    class="btn btn-primary mb-3"
+    data-toggle="modal"
+    data-target="#addManagerModal"
+  >
+    <i class="fas fa-plus"></i> Ajouter un gérant
+  </button>
+  <div class="card">
+    <div class="card-body">
+      <table class="table table-striped" id="gerantTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Parkings gérés</th>
+            <th>Date d'embauche</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for gerant in gerants %}
+          <tr>
+            <td>{{ gerant.id }}</td>
+            <td>{{ gerant.user.get_full_name }}</td>
+            <td>{{ gerant.user.email }}</td>
+            <td>{{ gerant.parkings.all.first.nom }}</td>
+            <td>{{ gerant.date_embauche|date}}</td>
+            <td>
+              <button
+                class="btn btn-sm btn-info edit-manager"
+                data-id="{{ gerant.id }}"
+              >
+                <i class="fas fa-edit"></i>
+              </button>
+              <button
+                class="btn btn-sm btn-danger delete-manager"
+                data-id="{{ gerant.id }}"
+                data-name="{{ gerant.user.get_full_name }}"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block modals %}
+<!-- Modal pour ajouter un gérant -->
+<div
+  class="modal fade"
+  id="addManagerModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="addManagerModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog display-message" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addManagerModalLabel">Ajouter un gérant</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="addManagerForm">
+          <div class="form-group">
+            <label for="managerEmail">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="managerEmail"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="managerParkings">Parkings gérés</label>
+            <select class="form-control" id="managerParkings" multiple required>
+              <!-- Options will be populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="managerHireDate">Date d'embauche</label>
+            <input
+              type="date"
+              class="form-control"
+              id="managerHireDate"
+              required
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Annuler
+        </button>
+        <button type="button" class="btn btn-primary" id="addManagerButton">
+          Ajouter
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour éditer un gérant -->
+<div
+  class="modal fade"
+  id="editManagerModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="editManagerModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog display-message" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editManagerModalLabel">
+          Modifier un gérant
+        </h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editManagerForm">
+          <input type="hidden" id="editManagerId" />
+          <div class="form-group">
+            <label for="editManagerEmail">Email</label>
+            <input
+              type="email"
+              class="form-control"
+              id="editManagerEmail"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="editManagerParkings">Parkings gérés</label>
+            <select
+              class="form-control"
+              id="editManagerParkings"
+              multiple
+              required
+            >
+              <!-- Options will be populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editManagerHireDate">Date d'embauche</label>
+            <input
+              type="date"
+              class="form-control"
+              id="editManagerHireDate"
+              required
+            />
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Annuler
+        </button>
+        <button type="button" class="btn btn-primary" id="updateManagerButton">
+          Enregistrer les modifications
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div
+  class="modal fade"
+  id="deleteConfirmModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="deleteConfirmModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog display-message" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">
+          Confirmer la suppression
+        </h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Êtes-vous sûr de vouloir supprimer le gérant
+        <span id="deleteManagerName"></span> ?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Annuler
+        </button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteButton">
+          Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_script %}
+<script>
+  $(document).ready(function () {
+
+    // Fonction pour charger les gérants
+  function loadGerants() {
+    $.ajax({
+      url: '{% url "get_gerants_data" %}',
+      method: 'GET',
+      success: function(response) {
+        if (response.gerants.length === 0) {
+          // Afficher un message si le tableau est vide
+          $('#gerantTable tbody').html('<tr><td colspan="6" class="text-center">Aucun gérant trouvé</td></tr>');
+        } else {
+          let rows = '';
+          response.gerants.forEach(gerant => {
+            let parkings = gerant.parkings.join(', ');
+            rows += `
+              <tr data-id="${gerant.id}">
+                <td>${gerant.id}</td>
+                <td>${gerant.nom}</td>
+                <td>${gerant.email}</td>
+                <td class="truncate">${parkings}</td>
+                <td>${gerant.date_embauche}</td>
+                <td>
+                  <button class="btn btn-sm btn-info edit-manager" data-id="${gerant.id}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger delete-manager" data-id="${gerant.id}" data-name="${gerant.nom}">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>`;
+          });
+          $('#gerantTable tbody').html(rows);
+        }
+      },
+      error: function(error) {
+        console.error('Erreur lors du chargement des gérants:', error);
+        showMessage('Erreur lors du chargement des gérants', 'error');
+      }
+    });
+  }
+
+  // Charger les données au démarrage
+  loadGerants();
+
+
+    // Fonction pour afficher les messages
+    function showMessage(message, type) {
+      var alertClass = type === "success" ? "alert-success" : "alert-danger";
+      var alertHtml =
+        '<div class="alert ' +
+        alertClass +
+        ' alert-dismissible fade show" role="alert">' +
+        message +
+        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+        '<span aria-hidden="true">&times;</span></button></div>';
+      if ((alertClass = type === "success")) {
+        $(".dashboard-content").prepend(alertHtml);
+        setTimeout(function () {
+          $(".alert").alert("close");
+        }, 5000);
+      } else {
+        $(".display-message").prepend(alertHtml);
+        setTimeout(function () {
+          $(".alert").alert("close");
+        }, 5000);
+      }
+    }
+
+    // Fonction pour formater la date d'affichage
+    function formatDisplayDate(dateString) {
+      var [year, month, day] = dateString.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    // Fonction pour valider le formulaire
+    function validateForm(formId) {
+      var isValid = true;
+      $(formId + " :input[required]").each(function () {
+        if ($(this).val() === "") {
+          isValid = false;
+          $(this).addClass("is-invalid");
+        } else {
+          $(this).removeClass("is-invalid");
+        }
+      });
+      return isValid;
+    }
+
+      // Fonction pour réinitialiser le formulaire
+    function resetForm(formId) {
+        $(formId)[0].reset();
+        $(formId + ' select').val(null).trigger('change');
+        $(formId + ' :input').removeClass('is-invalid');
+    }
+
+    // Initialiser Select2 avec des options supplémentaires
+    $("#managerParkings, #editManagerParkings").select2({
+      placeholder: "Sélectionnez un ou plusieurs parkings",
+      allowClear: true,
+      width: "100%",
+      language: {
+        noResults: function () {
+          return "Aucun parking trouvé";
+        },
+      },
+      templateSelection: function (data) {
+        if (data.selected) {
+          return $(
+            '<span class="select2-selection__choice__remove" role="presentation">×</span><span>' +
+              data.text +
+              "</span>"
+          );
+        }
+        return data.text;
+      },
+    });
+
+    // Charger les parkings
+    function loadParkings() {
+      $.get("/get-parkings/", function (data) {
+        var options = "";
+        data.forEach(function (parking) {
+          options +=
+            '<option value="' + parking.id + '">' + parking.nom + "</option>";
+        });
+        $("#managerParkings, #editManagerParkings").html(options);
+      });
+    }
+
+    loadParkings();
+
+    // Ajouter un gérant
+    $('#addManagerButton').on('click', function() {
+        if (!validateForm('#addManagerForm')) {
+            showMessage("Veuillez remplir tous les champs requis", 'error');
+            return;
+        }
+
+        var email = $('#managerEmail').val();
+        var parkings = $('#managerParkings').val();
+        var hireDate = $('#managerHireDate').val();
+
+        $.ajax({
+            url: '/add-gerant/',
+            method: 'POST',
+            data: JSON.stringify({
+                email: email,
+                parkings: parkings,
+                date_embauche: hireDate
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                $('#addManagerModal').modal('hide');
+                resetForm('#addManagerForm');
+                showMessage(response.message, 'success');
+
+                var formattedDate = formatDisplayDate(response.gerant.date_embauche);
+                
+                var newRow = '<tr data-id="' + response.gerant.id + '">...';  // Reste du code pour ajouter la ligne
+                $('#gerantTable tbody').append(newRow);
+                loadGerants();
+            },
+            error: function(xhr) {
+                showMessage(xhr.responseJSON.message, 'error');
+            }
+        });
+    });
+
+    // Éditer un gérant
+    $(document).on("click", ".edit-manager", function () {
+      var id = $(this).data("id");
+
+      $.ajax({
+        url: "/get-gerant/" + id + "/",
+        method: "GET",
+        success: function (response) {
+          $("#editManagerId").val(response.id);
+          $("#editManagerEmail").val(response.email);
+          $("#editManagerParkings").val(response.parkings).trigger("change");
+          $("#editManagerHireDate").val(response.date_embauche);
+          $("#editManagerModal").modal("show");
+          
+        },
+        error: function (xhr) {
+          showMessage(
+            "Erreur lors du chargement des données du gérant",
+            "error"
+          );
+        },
+      });
+
+      loadGerants();
+    });
+
+    // Mettre à jour un gérant
+    $('#updateManagerButton').on('click', function() {
+        if (!validateForm('#editManagerForm')) {
+            showMessage("Veuillez remplir tous les champs requis", 'error');
+            return;
+        }
+
+        var id = $('#editManagerId').val();
+        var email = $('#editManagerEmail').val();
+        var parkings = $('#editManagerParkings').val();
+        var hireDate = $('#editManagerHireDate').val();
+
+        $.ajax({
+            url: '/update-gerant/' + id + '/',
+            method: 'POST',
+            data: JSON.stringify({
+                email: email,
+                parkings: parkings,
+                date_embauche: hireDate
+            }),
+            contentType: 'application/json',
+            success: function(response) {
+                $('#editManagerModal').modal('hide');
+                showMessage(response.message, 'success');
+                loadGerants();
+            
+                var formattedDate = formatDisplayDate(response.gerant.date_embauche);
+                
+                var row = $('tr[data-id="' + id + '"]');
+                row.find('td:eq(2)').text(response.gerant.email);
+                row.find('td:eq(3)').text(response.gerant.parkings.join(', '));
+                row.find('td:eq(4)').text(formattedDate);
+                
+            },
+            error: function(xhr) {
+                showMessage(xhr.responseJSON.message, 'error');
+            }
+        });
+        loadGerants();
+    });
+
+    // Réinitialiser le formulaire lors de l'ouverture du modal d'ajout
+    $('#addManagerModal').on('show.bs.modal', function() {
+        resetForm('#addManagerForm');
+    });
+
+    // Supprimer un gérant
+    $(document).on("click", ".delete-manager", function () {
+      var id = $(this).data("id");
+      var name = $(this).data("name");
+      $("#deleteManagerName").text(name);
+      $("#confirmDeleteButton").data("id", id);
+      $("#deleteConfirmModal").modal("show");
+    });
+
+   // Modifier la fonction de confirmation de suppression
+  $("#confirmDeleteButton").on("click", function () {
+    var id = $(this).data("id");
+
+    $.ajax({
+      url: "/delete-gerant/" + id + "/",
+      method: "POST",
+      success: function (response) {
+        $("#deleteConfirmModal").modal("hide");
+        showMessage(response.message, "success");
+        loadGerants(); // Recharge les données sans recharger la page
+      },
+      error: function (xhr) {
+        showMessage(xhr.responseJSON.message, "error");
+      },   
+    });
+  });
+
+    // Initialiser les sélecteurs multiples
+    $("#managerParkings, #editManagerParkings").select2({
+      placeholder: "Sélectionnez un ou plusieurs parkings",
+      allowClear: true,
+    });
+
+    // Formater la date d'embauche pour l'affichage
+    function formatDate(dateString) {
+      var date = new Date(dateString);
+      return date.toLocaleDateString("fr-FR");
+    }
+
+    // Ajouter des attributs data-id aux lignes du tableau
+    $("#gerantTable tbody tr").each(function () {
+      var id = $(this).find("td:first").text();
+      $(this).attr("data-id", id);
+    });
+  });
+</script>
+{% endblock %}

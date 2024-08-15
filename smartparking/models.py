@@ -78,8 +78,15 @@ class Parking(models.Model):
     actif = models.BooleanField(default=True)
 
     def nombre_place_dispo(self):
-        reservations = Reservation.objects.filter(parking=self, is_expired=False).count()
-        return self.nombre_place - reservations
+        place_reservees = Reservation.objects.filter(parking=self, is_expired=False).count()
+        return self.nombre_place - place_reservees
+    
+    @property
+    def taux_occupation(self):
+        if self.nombre_place == 0:
+            return 0
+        place_reservees = Reservation.objects.filter(parking=self, is_expired=False).count()
+        return (place_reservees / self.nombre_place) * 100
 
     def __str__(self):
         return f"{self.nom} ({self.region})"
@@ -125,10 +132,8 @@ class Reservation(models.Model):
 
 
 class Gerant(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gerant_profile')
-    parking = models.ForeignKey(
-        Parking, on_delete=models.SET_NULL, null=True, blank=True, related_name='gerants')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gerant_profile')
+    parkings = models.ManyToManyField(Parking, related_name='gerants')
     date_embauche = models.DateTimeField()
 
     def __str__(self):

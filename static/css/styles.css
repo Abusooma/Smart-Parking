@@ -308,7 +308,6 @@ a[aria-expanded="true"] {
   color: var(--secondary-color);
 }
 
-
 /* styles pour le menu déroulant du profil */
 .profile-dropdown {
   position: relative;
@@ -344,4 +343,41 @@ a[aria-expanded="true"] {
   font-size: 1.7em;
   cursor: pointer;
   color: #f1f1f1;
+}
+
+/* Augmenter la largeur du champ Select2 */
+.select2-container {
+  width: 100% !important;
+}
+
+/* Améliorer l'apparence des options */
+.select2-results__option {
+  padding: 8px 12px;
+}
+
+/* Style pour les options sélectionnées */
+.select2-selection__choice {
+  background-color: #007bff !important;
+  color: white !important;
+  border: none !important;
+  padding: 5px 10px !important;
+  margin: 3px !important;
+}
+
+/* Style pour le conteneur de sélection */
+.select2-selection--multiple {
+  border: 1px solid #ced4da !important;
+  border-radius: 0.25rem !important;
+}
+
+/* Ajuster la hauteur du champ pour montrer plus d'options sélectionnées */
+.select2-container .select2-selection--multiple {
+  min-height: 30px;
+}
+
+.truncate {
+  max-width: 500px; /* Ajuste la largeur maximale selon tes besoins */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
