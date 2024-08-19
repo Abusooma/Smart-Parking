@@ -55,22 +55,28 @@ class CustomUser(AbstractUser):
         return self.email or 'N/A'
     
 
-class Client(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='client_profile')
-
-    def __str__(self):
-        return f"{self.user.email} - Client"
-
-
 class Region(models.Model):
     nom = models.CharField(max_length=150)
 
     def __str__(self):
         return self.nom or 'N/A'
 
+class Client(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='client_profile')
+
+    def __str__(self):
+        return f"{self.user.email} - Client"
+    
+
+class Gerant(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gerant_profile')
+
+    def __str__(self):
+        return f"{self.user.email} - Gérant"
 
 class Parking(models.Model):
+    gerant = models.ForeignKey(Gerant, on_delete=models.CASCADE, null=True)
     nom = models.CharField(max_length=100)
     nombre_place = models.IntegerField()
     region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name='parkings')
@@ -78,14 +84,14 @@ class Parking(models.Model):
     actif = models.BooleanField(default=True)
 
     def nombre_place_dispo(self):
-        place_reservees = Reservation.objects.filter(parking=self, is_expired=False).count()
+        place_reservees = Reservation.objects.filter(parking=self, status='active').count()
         return self.nombre_place - place_reservees
     
     @property
     def taux_occupation(self):
         if self.nombre_place == 0:
             return 0
-        place_reservees = Reservation.objects.filter(parking=self, is_expired=False).count()
+        place_reservees = Reservation.objects.filter(parking=self, status='active').count()
         return (place_reservees / self.nombre_place) * 100
 
     def __str__(self):
@@ -93,22 +99,24 @@ class Parking(models.Model):
 
 
 class Reservation(models.Model):
+    STATUS = [
+        ('active', 'active'), 
+        ('expired', 'expirée'),
+        ('cancel', 'annulée')
+    ]
     parking = models.ForeignKey(Parking, on_delete=models.CASCADE, blank=True, related_name='reservations')
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     date_arrive = models.DateTimeField()
     date_sortie = models.DateTimeField()
-    is_expired = models.BooleanField(default=False)
+    status = models.CharField(max_length=25, choices=STATUS, default='active')
+    access_code = models.CharField(max_length=7, blank=True, null=True)
 
     @property
     def verif_is_expired(self):
-        if not self.is_expired and self.date_sortie < timezone.now() + timedelta(hours=24):
-            self.is_expired = True
+        if self.date_sortie < timezone.now() + timedelta(hours=24):
+            self.status = 'expired'
 
-    @property
-    def access_code(self):
-        return self._generate_access_code()
-
-    def _generate_access_code(self, lenth_digit=4, length_char=2):
+    def generate_access_code(self, lenth_digit=4, length_char=2):
         digits = random.choices(string.digits, k=lenth_digit) 
         chars = random.choices(string.ascii_uppercase, k=length_char)
         code = digits + chars
@@ -130,13 +138,5 @@ class Reservation(models.Model):
     def __str__(self):
         return f"Réservation {self.id} pour {self.client} au {self.parking}"
 
-
-class Gerant(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gerant_profile')
-    parkings = models.ManyToManyField(Parking, related_name='gerants')
-    date_embauche = models.DateTimeField()
-
-    def __str__(self):
-        return f"{self.user.email} - Gérant"
 
 

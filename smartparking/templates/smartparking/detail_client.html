@@ -1,0 +1,164 @@
+{% extends 'dashboard/main.html' %} {% load static %} {% block title %} Détails
+du Client {% endblock %} {% block content %}
+<div class="container-fluid dashboard-content">
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <h2>Détails du client</h2>
+    </div>
+    <div class="col-md-6 text-right">
+      <a href="{% url 'clients' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Retour à la liste des clients
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Informations générales</h3>
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>ID:</strong> {{ client.id }}</p>
+          <p><strong>Email:</strong> {{ client.user.email }}</p>
+          <p>
+            <strong>Date d'inscription:</strong> {{ client.user.date_joined|date:"d/m/Y" }}
+          </p>
+        </div>
+        <div class="col-md-6">
+          <p>
+            <strong>Nombre total de réservations:</strong> {{ client.reservations.count }}
+          </p>
+          <p>
+            <strong>Statut du compte:</strong> {% if client.user.is_active %}Actif{% else %}Inactif{% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-body">
+      <h3 class="card-title">Historique des réservations</h3>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Parking</th>
+              <th>Date d'arrivée</th>
+              <th>Date de sortie</th>
+              <th>Statut</th>
+              <th>Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for reservation in client.reservations.all %}
+            <tr>
+              <td>{{ reservation.id }}</td>
+              <td>{{ reservation.parking.nom }}</td>
+              <td>{{ reservation.date_arrive|date:"d/m/Y H:i" }}</td>
+              <td>{{ reservation.date_sortie|date:"d/m/Y H:i" }}</td>
+              <td>
+                <span
+                  class="badge {% if reservation.status == 'active' %}badge-success{% elif reservation.status == 'expired' %}badge-warning{% else %}badge-danger{% endif %}"
+                >
+                  {{ reservation.get_status_display }}
+                </span>
+              </td>
+              <td>{{ reservation.calculate_price|floatformat:2 }} €</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center">
+                Aucune réservation trouvée.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if request.user.user_type == 'gerant' %}
+  <div class="card mt-4">
+    <div class="card-body">
+      <h3 class="card-title">Statistiques pour vos parkings</h3>
+      <div class="row">
+        {% for parking_stat in parking_stats %}
+        <div class="col-md-4 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">{{ parking_stat.nom }}</h5>
+              <p>
+                <strong>Nombre de réservations:</strong> {{ parking_stat.reservation_count }}
+              </p>
+              <p>
+                <strong>Montant total dépensé:</strong> {{ parking_stat.total_amount|floatformat:2 }} €
+              </p>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+          <p class="text-muted">
+            Aucun parking géré par vous n'a été réservé par ce client.
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card mt-4">
+    <div class="card-body">
+      <h3 class="card-title">Réservations par mois</h3>
+      <canvas id="reservationsChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('reservationsChart').getContext('2d');
+    var months = JSON.parse('{{ months_labels|safe }}');
+    var years = JSON.parse('{{ years_labels|safe }}');
+    var data = JSON.parse('{{ reservations_count_by_month|safe }}');
+
+    var chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Nombre de réservations',
+                data: data,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    ticks: {
+                        callback: function(value, index) {
+                            return months[index] + '\n' + years[index];
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+</script>
+{% endblock %}

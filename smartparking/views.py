@@ -1,9 +1,18 @@
+import json
+import locale
+from math import ceil
+from datetime import datetime, timedelta
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from .models import Client, Reservation
+from django.db.models import Sum, Count
+from django.db.models import Q
+from .models import Client
+from django.core.paginator import Paginator
 from django.core import serializers
 from django.shortcuts import render, get_object_or_404
-import json
 from .models import Gerant, Parking
 from django.views.decorators.http import require_http_methods
-from math import ceil
 from django.contrib import messages
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -18,7 +27,6 @@ from .utils import generate_password, format_date
 from .emails import email_for_new_user, email_confirm_reservation
 from .forms import CustomLoginForm
 from django.contrib.auth import logout, login, authenticate
-import locale
 
 User = get_user_model()
 
@@ -93,7 +101,6 @@ def paiement_view(request):
     price = request.session.get('price')
 
     if not all([parking_id, date_arrive, date_sortie, price]):
-        # Rediriger vers une page d'erreur ou la page d'accueil si les données sont manquantes
         return redirect('home')
 
     parking = get_object_or_404(Parking, pk=parking_id)
@@ -107,7 +114,6 @@ def paiement_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         if not email:
-            # Gérer l'erreur si l'email n'est pas fourni
             return render(request, 'smartparking/paiement.html', {'error': 'Email is required'})
 
         User = get_user_model()
@@ -118,7 +124,8 @@ def paiement_view(request):
             password = generate_password()
             user.set_password(password)
             user.save()
-            email_for_new_user(request, user, password)
+            email_for_new_user(
+                request, user, password, path_template='smartparking/emails/send_email_to_new_user.html')
         
         else:
             user.is_new_user = False
@@ -126,17 +133,15 @@ def paiement_view(request):
             
     
         client_profile, _ = Client.objects.get_or_create(user=user)
-
-        # Création de Reservation
         reservation = Reservation.objects.create(
             parking=parking,
             client=client_profile,
             date_arrive=date_arrive,
-            date_sortie=date_sortie
+            date_sortie=date_sortie,
+            access_code=Reservation().generate_access_code()
         )
-
+       
         email_confirm_reservation(request, user, reservation)
-        # Nettoyage de la session
         for key in ['parking_id', 'date_arrive', 'date_sortie', 'price']:
             request.session.pop(key, None)
 
@@ -181,7 +186,7 @@ def calculate_price(request):
         duration = (date_sortie - date_arrive).days
 
         if duration == 0:
-            duration +=1
+            duration = 1
 
         if (date_sortie - date_arrive).seconds > 0:
             duration += 1
@@ -196,15 +201,37 @@ def calculate_price(request):
     except Exception as e:
         return JsonResponse({'error': 'Une erreur est survenue'}, status=500)
 
+
 @login_required
 def dashboard_view(request):
-    parkings = Parking.objects.all()
-    reservations = Reservation.objects.all()
-    total_gerant = Gerant.objects.all().count()
-    total_reservation = Reservation.objects.all().count()
-    total_client = Client.objects.all().count()
-    total_revenu = sum(reservation.calculate_price for reservation in reservations)
-    parking_populaires = [parking for parking in parkings if parking.taux_occupation >= 10]
+    user_logged = request.user
+
+    gerants = Gerant.objects.all()
+
+    if user_logged.user_type == 'admin':
+        parkings = Parking.objects.all()
+        clients = Client.objects.all()
+        reservations = Reservation.objects.all()
+        
+
+    if user_logged.user_type == 'gerant':
+        parkings = Parking.objects.filter(gerant__user=user_logged)
+        clients = Client.objects.filter(
+            reservations__parking__gerant__user=user_logged).distinct()
+        reservations = Reservation.objects.filter(
+            parking__gerant__user=user_logged)
+
+    total_parking = parkings.count()
+    total_gerant = gerants.count()
+    total_reservation = reservations.count()
+    total_client = clients.count()
+
+    # Utilisez l'agrégation pour calculer le total des revenus
+    total_revenu = reservations.aggregate(Sum('parking__tarif'))[
+        'parking__tarif__sum'] or 0
+
+    # Calculez les parkings populaires
+    parking_populaires = [parking for parking in parkings if parking.taux_occupation > 2]
 
     context = {
         'total_gerant': total_gerant,
@@ -212,8 +239,10 @@ def dashboard_view(request):
         'total_reservation': total_reservation,
         'total_revenu': total_revenu,
         'parking_populaires': parking_populaires,
-        'recervation_recentes': reservations[:4]
+        'recervation_recentes': reservations.order_by('-date_arrive')[:4],
+        'total_parking': total_parking
     }
+
     return render(request, 'smartparking/dashboard.html', context=context)
 
 
@@ -222,25 +251,17 @@ def gestion_gerant(request):
 
 
 def get_gerants_data(request):
-    gerants = Gerant.objects.all().select_related(
-        'user').prefetch_related('parkings')
+    gerants = Gerant.objects.all()
 
     gerants_data = []
     for gerant in gerants:
-        # Formater la date
-        date_embauche = gerant.date_embauche.strftime("%d %B %Y")
-        # Corriger les caractères spéciaux
-        date_embauche = date_embauche.encode('latin1').decode('utf-8')
-
         gerants_data.append({
             'id': gerant.id,
-            'nom': gerant.user.get_full_name(),
             'email': gerant.user.email,
-            'parkings': [parking.nom for parking in gerant.parkings.all()],
-            'date_embauche': date_embauche,  # Date formatée
+            'date_embauche': gerant.user.date_joined.strftime('%d-%m-%Y')
         })
-        # Trié par ordre decroissant
-        gerants_data = sorted(gerants_data, key=lambda x: x['id'], reverse=True)
+
+    gerants_data = sorted(gerants_data, key=lambda x: x['id'], reverse=True)
 
     return JsonResponse({'gerants': gerants_data})
 
@@ -251,33 +272,31 @@ def add_gerant(request):
     try:
         user, created = User.objects.get_or_create(
             email=data['email'],
-            defaults={'user_type': 'gerant'}
+            defaults={
+                'user_type': 'gerant',
+            }
         )
         if created:
             password = generate_password()
             user.set_password(password)
             user.save()
+            email_for_new_user(
+                request, user, password, path_template='smartparking/emails/gerant_email.html')
         else:
-            raise ValueError("Un utilisateur avec cette adresse email existe déjà")
-
-        date_embauche = data['date_embauche']
-        date_embauche = timezone.make_aware(datetime.strptime(date_embauche, '%Y-%m-%d'))
+            raise ValueError(
+                "Un utilisateur avec cette adresse email existe déjà")
+        
         gerant = Gerant.objects.create(
             user=user,
-            date_embauche=date_embauche
         )
-        parking_ids = data.get('parkings', [])
-        gerant.parkings.set(parking_ids)
 
         return JsonResponse({
             'status': 'success',
             'message': 'Gérant ajouté avec succès.',
             'gerant': {
                 'id': gerant.id,
-                'name': user.get_full_name(),
                 'email': user.email,
-                'parkings': list(gerant.parkings.values_list('nom', flat=True)),
-                'date_embauche': gerant.date_embauche.strftime('%Y-%m-%d')
+                'date_embauche': user.date_joined.strftime('%d-%m-%Y')
             }
         })
     except Exception as e:
@@ -293,26 +312,15 @@ def update_gerant(request, gerant_id):
         user.email = data['email']
         user.save()
 
-        date_embauche = data['date_embauche']
-        date_embauche = timezone.make_aware(
-            datetime.strptime(date_embauche, '%Y-%m-%d'))
-
-        gerant.date_embauche = date_embauche
         gerant.save()
-
-        parking_ids = data.get('parkings', [])
-        gerant.parkings.set(parking_ids)
 
         return JsonResponse({
             'status': 'success',
             'message': 'Gérant mis à jour avec succès.',
             'gerant': {
                 'id': gerant.id,
-                'name': user.get_full_name(),
                 'email': user.email,
-                'parkings': list(gerant.parkings.values_list('nom', flat=True)),
-                # Format YYYY-MM-DD
-                'date_embauche': gerant.date_embauche.strftime('%Y-%m-%d')
+                'date_embauche': user.date_joined.strftime('%d-%m-%Y')
             }
         })
     except Exception as e:
@@ -341,7 +349,432 @@ def get_gerant(request, gerant_id):
     return JsonResponse({
         'id': gerant.id,
         'email': gerant.user.email,
-        'parkings': list(gerant.parkings.values_list('id', flat=True)),
-        # Format YYYY-MM-DD
-        'date_embauche': gerant.date_embauche.strftime('%Y-%m-%d')
+        'date_embauche': gerant.user.date_joined.strftime('%Y-%m-%d')
+    })
+
+
+def gestion_clients(request):
+    return render(request, 'smartparking/gestion_client.html')
+
+
+def search_clients(request):
+    user_logged = request.user
+    query = request.GET.get('query', '')
+
+    if user_logged.user_type == 'admin':
+        clients = Client.objects.filter(
+            Q(user__email__icontains=query) |
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query)
+        )
+    elif user_logged.user_type == 'gerant':
+        parkings_geres = Parking.objects.filter(gerant__user=user_logged)
+        clients = Client.objects.filter(
+            Q(reservations__parking__in=parkings_geres),
+            Q(user__email__icontains=query) |
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query)
+        ).distinct()
+    else:
+        # Aucun client si l'utilisateur n'est ni admin ni gérant
+        clients = Client.objects.none()
+
+    clients = clients.annotate(reservations_count=Count(
+        'reservations')).order_by('-user__date_joined')
+
+    paginator = Paginator(clients, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    client_data = [{
+        'id': client.id,
+        'name': f"{client.user.first_name} {client.user.last_name}",
+        'email': client.user.email,
+        'date_inscription': client.user.date_joined.strftime('%d/%m/%Y'),
+        'reservations_count': client.reservations_count
+    } for client in page_obj]
+
+    return JsonResponse({
+        'clients': client_data,
+        'has_next': page_obj.has_next(),
+        'has_previous': page_obj.has_previous(),
+        'num_pages': paginator.num_pages,
+        'current_page': page_obj.number
+    })
+
+@login_required
+def client_detail(request, client_id):
+    client = get_object_or_404(Client, id=client_id)
+    user = client.user
+
+    reservations = Reservation.objects.filter(
+        client=client).order_by('-date_arrive')
+
+    now = datetime.now()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    stats = {
+        'reservations_this_month': reservations.filter(date_arrive__gte=month_start).count(),
+        'total_amount_spent': reservations.aggregate(total=Sum('parking__tarif'))['total'] or 0,
+        'favorite_parking': reservations.values('parking__nom').annotate(count=Count('parking')).order_by('-count').first(),
+    }
+
+
+    active_reservations = reservations.filter(status='active')
+
+    last_12_months = [now - timedelta(days=30*i) for i in range(12)]
+    months_labels = [month.strftime('%b')
+                     for month in reversed(last_12_months)]
+    years_labels = [month.strftime('%Y') for month in reversed(last_12_months)]
+
+    reservations_count_by_month = []
+    for month in reversed(last_12_months):
+        month_start = month.replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_end = (month_start + timedelta(days=32)
+                     ).replace(day=1) - timedelta(seconds=1)
+        count = reservations.filter(
+            date_arrive__gte=month_start, date_arrive__lte=month_end).count()
+        reservations_count_by_month.append(count)
+
+    parking_stats = []
+    if request.user.user_type == 'gerant':
+        gerant = Gerant.objects.get(user=request.user)
+        parkings = Parking.objects.filter(gerant=gerant)
+        for parking in parkings:
+            parking_reservations = reservations.filter(parking=parking)
+            parking_stats.append({
+                'nom': parking.nom,
+                'reservation_count': parking_reservations.count(),
+                'total_amount': parking_reservations.aggregate(total=Sum('parking__tarif'))['total'] or 0,
+            })
+
+    context = {
+        'client': client,
+        'user': user,
+        'reservations': reservations,
+        'active_reservations': active_reservations,
+        'stats': stats,
+        'months_labels': json.dumps(months_labels),
+        'years_labels': json.dumps(years_labels),
+        'reservations_count_by_month': json.dumps(reservations_count_by_month),
+        'parking_stats': parking_stats,
+    }
+
+    return render(request, 'smartparking/detail_client.html', context)
+
+def block_client(request, client_id):
+    if request.method == 'POST':
+        try:
+            client = Client.objects.get(id=client_id)
+            client.user.is_active = False
+            client.user.save()
+            return JsonResponse({'success': True})
+        except Client.DoesNotExist:
+            return JsonResponse({'error': 'Client not found'}, status=404)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+def get_reservations(request):
+    """ 
+    Cette vue traite l'affichage des resevations et 
+    gere le systeme de filtrage de ces reservation 
+    """
+
+    user_logged = request.user
+
+    reservations = Reservation.objects.all()
+
+    if user_logged.user_type == 'gerant':
+        reservations = Reservation.objects.filter(parking__gerant__user=user_logged)
+
+    date_debut = request.GET.get('date_debut')
+    if date_debut:
+        reservations = reservations.filter(date_arrive__gte=date_debut)
+
+    date_fin = request.GET.get('date_fin')
+    if date_fin:
+        reservations = reservations.filter(date_sortie__lte=date_fin)
+
+    statut = request.GET.get('statut')
+    if statut:
+        reservations = reservations.filter(status=statut)
+
+
+    parking_nom = request.GET.get('parking')
+    if parking_nom:
+        reservations = reservations.filter(parking__nom=parking_nom)
+
+
+    paginator = Paginator(reservations, 10)  # 10 réservations par page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'reservations': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'parkings': Parking.objects.all(),
+    }
+
+    return render(request, 'smartparking/gestion_reservations.html', context)
+
+def get_reservation_details(request, reservation_id):
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    data = {
+        'id': reservation.id,
+        'client': str(reservation.client.user.email),
+        'parking': str(reservation.parking),
+        'date_arrive': reservation.date_arrive.strftime('%d-%m-%Y'),
+        'date_sortie': reservation.date_sortie.strftime('%d-%m-%Y'),
+        'statut': reservation.status,
+        'access_code': reservation.access_code,
+    }
+    return JsonResponse(data)
+
+
+def update_reservation(request, reservation_id):
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    if request.method == 'POST':
+        reservation.parking_id = request.POST.get('parking')
+        reservation.date_arrive = request.POST.get('date_arrive')
+        reservation.date_sortie = request.POST.get('date_sortie')
+        statut = request.POST.get('statut')
+        if statut == 'Confirmé':
+            reservation.is_expired = True
+            reservation.is_cancel = False
+        elif statut == 'En cours':
+            reservation.is_expired = False
+            reservation.is_cancel = False
+        elif statut == 'Annulé':
+            reservation.is_cancel = True
+        reservation.save()
+        return JsonResponse({'success': True, 'reservation': {
+            'id': reservation.id,
+            'client': str(reservation.client),
+            'parking': str(reservation.parking),
+            'date_arrive': reservation.date_arrive.strftime('%Y-%m-%d %H:%M'),
+            'date_sortie': reservation.date_sortie.strftime('%Y-%m-%d %H:%M'),
+            'statut': 'Confirmé' if reservation.is_expired else 'En cours' if not reservation.is_cancel else 'Annulé',
+            'access_code': reservation.access_code,
+        }})
+    return JsonResponse({'success': False}, status=400)
+
+
+def delete_reservation(request, reservation_id):
+    reservation = get_object_or_404(Reservation, id=reservation_id)
+    if request.method == 'POST':
+        reservation.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+
+# SECTION GESTION DES REGIONS
+
+def region_list(request):
+    return render(request, 'smartparking/gouvernaurat.html')
+
+
+@require_http_methods(["GET"])
+def get_regions(request):
+    regions = Region.objects.all()
+    data = [{"id": region.id, "nom": region.nom,
+             "nombre_parkings": region.parkings.count()} for region in regions]
+    
+    data = sorted(data, key=lambda x: x['id'], reverse=True)
+    return JsonResponse({"regions": data})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_region(request):
+    try:
+        data = json.loads(request.body)
+        nom = data.get('nom')
+        if not nom:
+            return JsonResponse({"message": "Le nom de la région est obligatoire."}, status=400)
+
+        region = Region.objects.create(nom=nom)
+        return JsonResponse({"id": region.id, "nom": region.nom, "message": "Région ajoutée avec succès."}, status=201)
+    except Exception as e:
+        return JsonResponse({"message": str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+def update_region(request, region_id):
+    try:
+        region = get_object_or_404(Region, id=region_id)
+        data = json.loads(request.body)
+        nom = data.get('nom')
+        if not nom:
+            return JsonResponse({"message": "Le nom de la région est obligatoire."}, status=400)
+
+        region.nom = nom
+        region.save()
+        return JsonResponse({"id": region.id, "nom": region.nom, "message": "Région mise à jour avec succès."})
+    except Exception as e:
+        return JsonResponse({"message": str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def delete_region(request, region_id):
+    try:
+        region = get_object_or_404(Region, id=region_id)
+        region.delete()
+        return JsonResponse({"message": "Région supprimée avec succès."})
+    except Exception as e:
+        return JsonResponse({"message": str(e)}, status=400)
+
+
+@require_http_methods(["GET"])
+def get_region(request, region_id):
+    try:
+        region = get_object_or_404(Region, id=region_id)
+        return JsonResponse({"id": region.id, "nom": region.nom})
+    except Exception as e:
+        return JsonResponse({"message": str(e)}, status=400)
+    
+
+# SECTION GESTION PARKING  
+@login_required
+def get_list_parkings(request):
+    parkings = Parking.objects.all()
+    regions = Region.objects.all()
+    return render(request, 'smartparking/gestion_parking.html', {'parkings': parkings, 'regions': regions})
+
+
+@login_required
+@require_POST
+def add_parking(request):
+    if request.method == 'POST':
+        nom = request.POST.get('nom')
+        region_id = request.POST.get('region')
+        nombre_place = request.POST.get('nombre_place')
+        tarif = request.POST.get('tarif')
+        actif = request.POST.get('actif') == 'on'
+
+        if not all([nom, region_id, nombre_place, tarif]):
+            return JsonResponse({'success': False, 'error': 'Tous les champs sont obligatoires.'})
+
+        try:
+            region = Region.objects.get(id=region_id)
+            gerant = Gerant.objects.get(user=request.user)
+
+            parking = Parking.objects.create(
+                gerant=gerant,
+                nom=nom,
+                region=region,
+                nombre_place=int(nombre_place),
+                tarif=float(tarif),
+                actif=actif
+            )
+
+            return JsonResponse({
+                'success': True,
+                'id': parking.id,
+                'nom': parking.nom,
+                'region': parking.region.nom,
+                'nombre_place': parking.nombre_place,
+                'nombre_place_dispo': parking.nombre_place_dispo(),
+                'tarif': float(parking.tarif),
+                'taux_occupation': parking.taux_occupation,
+                'actif': parking.actif
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_POST
+def edit_parking(request):
+    if request.method == 'POST':
+        parking_id = request.POST.get('parking_id')
+        nom = request.POST.get('nom')
+        region_id = request.POST.get('region')
+        nombre_place = request.POST.get('nombre_place')
+        tarif = request.POST.get('tarif')
+        actif = request.POST.get('actif') == 'on'
+
+        if not all([parking_id, nom, region_id, nombre_place, tarif]):
+            return JsonResponse({'success': False, 'error': 'Tous les champs sont obligatoires.'})
+
+        try:
+            parking = get_object_or_404(Parking, id=parking_id)
+            region = Region.objects.get(id=region_id)
+
+            parking.nom = nom
+            parking.region = region
+            parking.nombre_place = int(nombre_place)
+            parking.tarif = float(tarif)
+            parking.actif = actif
+            parking.save()
+
+            return JsonResponse({
+                'success': True,
+                'id': parking.id,
+                'nom': parking.nom,
+                'region': parking.region.nom,
+                'nombre_place': parking.nombre_place,
+                'nombre_place_dispo': parking.nombre_place_dispo(),
+                'tarif': float(parking.tarif),
+                'taux_occupation': parking.taux_occupation,
+                'actif': parking.actif
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def get_parking_details(request, parking_id):
+    parking = get_object_or_404(Parking, id=parking_id)
+    return JsonResponse({
+        'id': parking.id,
+        'nom': parking.nom,
+        'region': parking.region.id,
+        'nombre_place': parking.nombre_place,
+        'nombre_place_dispo': parking.nombre_place_dispo(),
+        'tarif': float(parking.tarif),
+        'taux_occupation': parking.taux_occupation,
+        'actif': parking.actif
+    })
+
+
+@login_required
+@require_POST
+def delete_parking(request):
+    if request.method == 'POST':
+        parking_id = request.POST.get('parking_id')
+        try:
+            parking = get_object_or_404(Parking, id=parking_id)
+            parking_name = parking.nom  # Sauvegardez le nom avant la suppression
+            parking.delete()
+            return JsonResponse({'success': True, 'message': f'Le parking "{parking_name}" a été supprimé avec succès.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+
+@login_required
+def search_parkings(request):
+    query = request.GET.get('q', '')
+    parkings = Parking.objects.filter(
+        Q(nom__icontains=query) |
+        Q(region__nom__icontains=query)
+    )
+    return JsonResponse({
+        'parkings': [
+            {
+                'id': p.id,
+                'nom': p.nom,
+                'region': p.region.nom,
+                'nombre_place': p.nombre_place,
+                'nombre_place_dispo': p.nombre_place_dispo(),
+                'tarif': float(p.tarif),
+                'taux_occupation': p.taux_occupation,
+                'actif': p.actif
+            } for p in parkings
+        ]
     })

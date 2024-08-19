@@ -1,0 +1,209 @@
+{% extends 'dashboard/main.html' %}
+{% load static %}
+
+{% block title %}Gestion des régions{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-content">
+  <h2 class="mb-4">Gestion des Régions</h2>
+
+  <!-- Ajout d'un conteneur pour les messages -->
+  <div id="messageContainer" class="alert" style="display: none;"></div>
+
+
+  <div class="mt-3">
+    <h3>Liste des Régions</h3>
+    <table class="table table-striped" id="regionsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nom de la Région</th>
+          <th>Nombre de Parkings</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Les régions seront ajoutées ici dynamiquement -->
+      </tbody>
+    </table>
+    <button class="btn btn-success" id="addRegionBtn">
+      Ajouter une Région
+    </button>
+  </div>
+</div>
+
+<!-- Modal pour ajouter/modifier une région -->
+<div class="modal fade" id="regionModal" tabindex="-1" role="dialog" aria-labelledby="regionModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="regionModalLabel">Ajouter une Région</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="regionForm">
+          <input type="hidden" id="regionId">
+          <div class="form-group">
+            <label for="regionName">Nom de la Région</label>
+            <input type="text" class="form-control" id="regionName" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="saveRegionBtn">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pour confirmer la suppression -->
+<div class="modal fade" id="deleteRegionModal" tabindex="-1" role="dialog" aria-labelledby="deleteRegionModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteRegionModalLabel">Supprimer une Région</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir supprimer cette région ? Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+$(document).ready(function() {
+  loadRegions();
+
+  // Fonction pour afficher les messages
+  function showMessage(message, type) {
+    var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    $('#messageContainer')
+      .removeClass('alert-success alert-danger')
+      .addClass(alertClass)
+      .text(message)
+      .show()
+      .delay(5000)
+      .fadeOut();
+  }
+
+  // Ouvrir le modal pour ajouter une région
+  $('#addRegionBtn').click(function() {
+    $('#regionModalLabel').text('Ajouter une Région');
+    $('#regionId').val('');
+    $('#regionName').val('');
+    $('#regionModal').modal('show');
+  });
+
+  // Enregistrer ou mettre à jour une région
+  $('#saveRegionBtn').click(function() {
+    var regionId = $('#regionId').val();
+    var regionName = $('#regionName').val();
+
+    if (!regionName) {
+      showMessage('Le nom de la région est obligatoire.', 'error');
+      return;
+    }
+
+    var url = regionId ? '/update-region/' + regionId + '/' : '/add-region/';
+    var method = regionId ? 'PUT' : 'POST';
+
+    $.ajax({
+      url: url,
+      method: method,
+      data: JSON.stringify({ nom: regionName }),
+      contentType: 'application/json',
+      success: function(response) {
+        $('#regionModal').modal('hide');
+        showMessage(regionId ? 'Région mise à jour avec succès.' : 'Région ajoutée avec succès.', 'success');
+        loadRegions();
+      },
+      error: function(xhr) {
+        showMessage('Erreur: ' + xhr.responseJSON.message, 'error');
+      }
+    });
+  });
+
+  // Charger la liste des régions
+  function loadRegions() {
+    $.ajax({
+      url: '/get-regions/',
+      method: 'GET',
+      success: function(response) {
+        var tableBody = $('#regionsTable tbody');
+        tableBody.empty();
+        response.regions.forEach(function(region) {
+          tableBody.append(`
+            <tr>
+              <td>${region.id}</td>
+              <td>${region.nom}</td>
+              <td>${region.nombre_parkings}</td>
+              <td>
+                <button class="btn btn-sm btn-primary edit-region" data-id="${region.id}">Modifier</button>
+                <button class="btn btn-sm btn-danger delete-region" data-id="${region.id}">Supprimer</button>
+              </td>
+            </tr>
+          `);
+        });
+      },
+      error: function(xhr) {
+        showMessage('Erreur lors du chargement des régions', 'error');
+      }
+    });
+  }
+
+  // Ouvrir le modal pour modifier une région
+  $(document).on('click', '.edit-region', function() {
+    var regionId = $(this).data('id');
+    $.ajax({
+      url: '/get-region/' + regionId + '/',
+      method: 'GET',
+      success: function(response) {
+        $('#regionModalLabel').text('Modifier une Région');
+        $('#regionId').val(response.id);
+        $('#regionName').val(response.nom);
+        $('#regionModal').modal('show');
+      },
+      error: function(xhr) {
+        showMessage('Erreur lors du chargement des données de la région', 'error');
+      }
+    });
+  });
+
+  // Ouvrir le modal de confirmation de suppression
+  $(document).on('click', '.delete-region', function() {
+    var regionId = $(this).data('id');
+    $('#confirmDeleteBtn').data('id', regionId);
+    $('#deleteRegionModal').modal('show');
+  });
+
+  // Confirmer la suppression d'une région
+  $('#confirmDeleteBtn').click(function() {
+    var regionId = $(this).data('id');
+    $.ajax({
+      url: '/delete-region/' + regionId + '/',
+      method: 'DELETE',
+      success: function(response) {
+        $('#deleteRegionModal').modal('hide');
+        showMessage('Région supprimée avec succès.', 'success');
+        loadRegions();
+      },
+      error: function(xhr) {
+        showMessage('Erreur lors de la suppression de la région', 'error');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

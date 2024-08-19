@@ -1,0 +1,245 @@
+{% extends 'dashboard/main.html' %}
+
+{% load static %}
+
+{% block title %} Gestion des Clients {% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-content">
+    <h2 class="mb-4">Gestion des clients</h2>
+
+    <!-- Barre de recherche -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un client..." />
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau des clients -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Date d'inscription</th>
+                        <th>Nombre de réservations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="clientTableBody">
+                    <!-- Les données des clients seront insérées ici par JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- Les liens de pagination seront insérés ici par JavaScript -->
+        </ul>
+    </nav>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal pour confirmer le blocage d'un client -->
+<div class="modal fade" id="blockClientModal" tabindex="-1" role="dialog" aria-labelledby="blockClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="blockClientModalLabel">Confirmer le blocage</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir bloquer ce client ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmBlockButton">Bloquer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    $(document).ready(function () {
+        let currentPage = 1;
+        let searchQuery = '';
+
+        function loadClients(page = 1, query = '') {
+            $.ajax({
+                url: "{% url 'search_clients' %}",
+                data: { page: page, query: query },
+                dataType: 'json',
+                success: function (data) {
+                    updateClientTable(data.clients);
+                    updatePagination(data);
+                    currentPage = page;
+                    searchQuery = query;
+                },
+                error: function (xhr, status, error) {
+                    console.error("Une erreur s'est produite : " + error);
+                }
+            });
+        }
+
+        function updateClientTable(clients) {
+            const tableBody = $('#clientTableBody');
+            tableBody.empty();
+
+            if (clients.length === 0) {
+                const emptyMessage = `
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            <p class="text-muted">Aucun client trouvé.</p>
+                        </td>
+                    </tr>
+                `;
+                tableBody.append(emptyMessage);
+            } else {
+                clients.forEach(function (client) {
+                    const row = `
+                        <tr>
+                            <td>${client.id}</td>
+                            <td>${client.email}</td>
+                            <td>${client.date_inscription}</td>
+                            <td>${client.reservations_count}</td>
+                            <td>
+                                <a href="/get-client-details/${client.id}/" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> Détails
+                                </a>
+                                <button class="btn btn-sm btn-danger block-client-btn" data-client-id="${client.id}">
+                                    <i class="fas fa-ban"></i> Bloquer
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.append(row);
+                });
+            }
+        }
+        function updatePagination(data) {
+            const pagination = $('#pagination');
+            pagination.empty();
+
+            if (data.has_previous) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" data-page="${data.current_page - 1}">Précédent</a></li>`);
+            } else {
+                pagination.append('<li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a></li>');
+            }
+
+            for (let i = 1; i <= data.num_pages; i++) {
+                if (i === data.current_page) {
+                    pagination.append(`<li class="page-item active"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+                } else {
+                    pagination.append(`<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+                }
+            }
+
+            if (data.has_next) {
+                pagination.append(`<li class="page-item"><a class="page-link" href="#" data-page="${data.current_page + 1}">Suivant</a></li>`);
+            } else {
+                pagination.append('<li class="page-item disabled"><a class="page-link" href="#" tabindex="-1" aria-disabled="true">Suivant</a></li>');
+            }
+        }
+
+        function showBlockConfirmation(clientId) {
+            const modal = $('#blockClientModal');
+            modal.find('.modal-body').text(`Êtes-vous sûr de vouloir bloquer le client avec l'ID ${clientId} ?`);
+            modal.find('#confirmBlockButton').data('client-id', clientId);
+            modal.modal('show');
+        }
+
+        function blockClient(clientId) {
+            $.ajax({
+                url: "{% url 'block_client' 0 %}".replace('0', clientId),
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success) {
+                        alert(`Le client avec l'ID ${clientId} a été bloqué.`);
+                        loadClients(currentPage, searchQuery);
+                    } else {
+                        alert("Une erreur s'est produite lors du blocage du client.");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Une erreur s'est produite : " + error);
+                    alert("Une erreur s'est produite lors du blocage du client.");
+                }
+            });
+        }
+
+        // Fonction pour obtenir le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Événements
+        $('#searchButton').on('click', function () {
+            const query = $('#searchInput').val();
+            loadClients(1, query);
+        });
+
+        $('#searchInput').on('keyup', function (e) {
+            if (e.key === 'Enter') {
+                const query = $(this).val();
+                loadClients(1, query);
+            }
+        });
+
+        $(document).on('click', '.page-link', function (e) {
+            e.preventDefault();
+            const page = $(this).data('page');
+            loadClients(page, searchQuery);
+        });
+
+        $(document).on('click', '.view-client-btn', function () {
+            const clientId = $(this).data('client-id');
+            showClientDetails(clientId);
+        });
+
+        $(document).on('click', '.block-client-btn', function () {
+            const clientId = $(this).data('client-id');
+            showBlockConfirmation(clientId);
+        });
+
+        $('#confirmBlockButton').on('click', function () {
+            const clientId = $(this).data('client-id');
+            $('#blockClientModal').modal('hide');
+            blockClient(clientId);
+        });
+
+        // Charger les clients initialement
+        loadClients();
+    });
+</script>
+{% endblock %}

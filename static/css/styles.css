@@ -381,3 +381,28 @@ a[aria-expanded="true"] {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table td,
+.table th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table th {
+  text-align: center;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  white-space: nowrap;
+}

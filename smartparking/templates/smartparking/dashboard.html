@@ -4,6 +4,7 @@ Dashboard Admin{% endblock %} {% block content %}
   <h2 class="mb-4">Tableau de bord</h2>
   <!-- Quick Stats -->
   <div class="row mb-4">
+    {% if request.user.user_type == 'admin' %}
     <div class="col-md-3">
       <div class="card text-white bg-primary">
         <div class="card-body">
@@ -12,6 +13,17 @@ Dashboard Admin{% endblock %} {% block content %}
         </div>
       </div>
     </div>
+    {% endif %}
+     {% if request.user.user_type == 'gerant' %}
+    <div class="col-md-3">
+      <div class="card text-white bg-primary">
+        <div class="card-body">
+          <h5 class="card-title">Parkings</h5>
+          <p class="card-text display-4">{{ total_parking }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
     <div class="col-md-3">
       <div class="card text-white bg-success">
         <div class="card-body">
@@ -28,6 +40,7 @@ Dashboard Admin{% endblock %} {% block content %}
         </div>
       </div>
     </div>
+    {% if request.user.user_type == 'gerant' %}
     <div class="col-md-3">
       <div class="card text-white bg-info">
         <div class="card-body">
@@ -38,6 +51,7 @@ Dashboard Admin{% endblock %} {% block content %}
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
 
  <!-- Parking Management -->

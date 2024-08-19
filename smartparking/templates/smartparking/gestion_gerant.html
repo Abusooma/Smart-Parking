@@ -9,27 +9,22 @@ des gérants{% endblock %} {% block content %}
   >
     <i class="fas fa-plus"></i> Ajouter un gérant
   </button>
-  <div class="card">
-    <div class="card-body">
+    <div class="w-75">
       <table class="table table-striped" id="gerantTable">
         <thead>
           <tr>
             <th>ID</th>
-            <th>Nom</th>
             <th>Email</th>
-            <th>Parkings gérés</th>
-            <th>Date d'embauche</th>
+            <th>Date d'inscription</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="text-center">
           {% for gerant in gerants %}
           <tr>
             <td>{{ gerant.id }}</td>
-            <td>{{ gerant.user.get_full_name }}</td>
             <td>{{ gerant.user.email }}</td>
-            <td>{{ gerant.parkings.all.first.nom }}</td>
-            <td>{{ gerant.date_embauche|date}}</td>
+            <td>{{ gerant.date_embauche}}</td>
             <td>
               <button
                 class="btn btn-sm btn-info edit-manager"
@@ -40,7 +35,6 @@ des gérants{% endblock %} {% block content %}
               <button
                 class="btn btn-sm btn-danger delete-manager"
                 data-id="{{ gerant.id }}"
-                data-name="{{ gerant.user.get_full_name }}"
               >
                 <i class="fas fa-trash"></i>
               </button>
@@ -50,28 +44,15 @@ des gérants{% endblock %} {% block content %}
         </tbody>
       </table>
     </div>
-  </div>
 </div>
 {% endblock %} {% block modals %}
 <!-- Modal pour ajouter un gérant -->
-<div
-  class="modal fade"
-  id="addManagerModal"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="addManagerModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="addManagerModal" tabindex="-1" role="dialog" aria-labelledby="addManagerModalLabel" aria-hidden="true">
   <div class="modal-dialog display-message" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addManagerModalLabel">Ajouter un gérant</h5>
-        <button
-          type="button"
-          class="close"
-          data-dismiss="modal"
-          aria-label="Close"
-        >
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -79,63 +60,25 @@ des gérants{% endblock %} {% block content %}
         <form id="addManagerForm">
           <div class="form-group">
             <label for="managerEmail">Email</label>
-            <input
-              type="email"
-              class="form-control"
-              id="managerEmail"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="managerParkings">Parkings gérés</label>
-            <select class="form-control" id="managerParkings" multiple required>
-              <!-- Options will be populated dynamically -->
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="managerHireDate">Date d'embauche</label>
-            <input
-              type="date"
-              class="form-control"
-              id="managerHireDate"
-              required
-            />
+            <input type="email" class="form-control" id="managerEmail" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" />
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-          Annuler
-        </button>
-        <button type="button" class="btn btn-primary" id="addManagerButton">
-          Ajouter
-        </button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="addManagerButton">Ajouter</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Modal pour éditer un gérant -->
-<div
-  class="modal fade"
-  id="editManagerModal"
-  tabindex="-1"
-  role="dialog"
-  aria-labelledby="editManagerModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="editManagerModal" tabindex="-1" role="dialog" aria-labelledby="editManagerModalLabel" aria-hidden="true">
   <div class="modal-dialog display-message" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editManagerModalLabel">
-          Modifier un gérant
-        </h5>
-        <button
-          type="button"
-          class="close"
-          data-dismiss="modal"
-          aria-label="Close"
-        >
+        <h5 class="modal-title" id="editManagerModalLabel">Modifier un gérant</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -144,42 +87,13 @@ des gérants{% endblock %} {% block content %}
           <input type="hidden" id="editManagerId" />
           <div class="form-group">
             <label for="editManagerEmail">Email</label>
-            <input
-              type="email"
-              class="form-control"
-              id="editManagerEmail"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="editManagerParkings">Parkings gérés</label>
-            <select
-              class="form-control"
-              id="editManagerParkings"
-              multiple
-              required
-            >
-              <!-- Options will be populated dynamically -->
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="editManagerHireDate">Date d'embauche</label>
-            <input
-              type="date"
-              class="form-control"
-              id="editManagerHireDate"
-              required
-            />
+            <input type="email" class="form-control" id="editManagerEmail" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" />
           </div>
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-          Annuler
-        </button>
-        <button type="button" class="btn btn-primary" id="updateManagerButton">
-          Enregistrer les modifications
-        </button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="updateManagerButton">Enregistrer les modifications</button>
       </div>
     </div>
   </div>
@@ -240,19 +154,16 @@ des gérants{% endblock %} {% block content %}
         } else {
           let rows = '';
           response.gerants.forEach(gerant => {
-            let parkings = gerant.parkings.join(', ');
             rows += `
               <tr data-id="${gerant.id}">
                 <td>${gerant.id}</td>
-                <td>${gerant.nom}</td>
                 <td>${gerant.email}</td>
-                <td class="truncate">${parkings}</td>
                 <td>${gerant.date_embauche}</td>
                 <td>
                   <button class="btn btn-sm btn-info edit-manager" data-id="${gerant.id}">
                     <i class="fas fa-edit"></i>
                   </button>
-                  <button class="btn btn-sm btn-danger delete-manager" data-id="${gerant.id}" data-name="${gerant.nom}">
+                  <button class="btn btn-sm btn-danger delete-manager" data-id="${gerant.id}">
                     <i class="fas fa-trash"></i>
                   </button>
                 </td>
@@ -301,19 +212,43 @@ des gérants{% endblock %} {% block content %}
       return `${day}/${month}/${year}`;
     }
 
-    // Fonction pour valider le formulaire
-    function validateForm(formId) {
-      var isValid = true;
-      $(formId + " :input[required]").each(function () {
-        if ($(this).val() === "") {
-          isValid = false;
-          $(this).addClass("is-invalid");
-        } else {
-          $(this).removeClass("is-invalid");
-        }
-      });
-      return isValid;
+    // Fonction améliorée pour valider le formulaire
+  function validateForm(formId) {
+    var isValid = true;
+    var errorMessages = [];
+
+    $(formId + " :input[required]").each(function() {
+      var $input = $(this);
+      var inputValue = $input.val().trim();
+      var inputType = $input.attr("type");
+
+      if (inputValue === "") {
+        isValid = false;
+        $input.addClass("is-invalid");
+        errorMessages.push("Veuillez remplir tous les champs requis.");
+      } else if (inputType === "email" && !isValidEmail(inputValue)) {
+        isValid = false;
+        $input.addClass("is-invalid");
+        errorMessages.push("Veuillez entrer une adresse email valide contenant '@'.");
+      } else {
+        $input.removeClass("is-invalid");
+      }
+    });
+
+    if (!isValid) {
+      // Afficher les messages d'erreur uniques
+      var uniqueErrorMessages = [...new Set(errorMessages)];
+      showMessage(uniqueErrorMessages.join("<br>"), 'error');
     }
+
+    return isValid;
+  }
+
+  // Fonction pour valider le format de l'email
+  function isValidEmail(email) {
+    return email.includes("@") && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
 
       // Fonction pour réinitialiser le formulaire
     function resetForm(formId) {
@@ -322,146 +257,82 @@ des gérants{% endblock %} {% block content %}
         $(formId + ' :input').removeClass('is-invalid');
     }
 
-    // Initialiser Select2 avec des options supplémentaires
-    $("#managerParkings, #editManagerParkings").select2({
-      placeholder: "Sélectionnez un ou plusieurs parkings",
-      allowClear: true,
-      width: "100%",
-      language: {
-        noResults: function () {
-          return "Aucun parking trouvé";
-        },
-      },
-      templateSelection: function (data) {
-        if (data.selected) {
-          return $(
-            '<span class="select2-selection__choice__remove" role="presentation">×</span><span>' +
-              data.text +
-              "</span>"
-          );
-        }
-        return data.text;
-      },
-    });
 
-    // Charger les parkings
-    function loadParkings() {
-      $.get("/get-parkings/", function (data) {
-        var options = "";
-        data.forEach(function (parking) {
-          options +=
-            '<option value="' + parking.id + '">' + parking.nom + "</option>";
-        });
-        $("#managerParkings, #editManagerParkings").html(options);
-      });
+  // Modifier la fonction d'ajout d'un gérant
+  $('#addManagerButton').on('click', function() {
+    if (!validateForm('#addManagerForm')) {
+      return;
     }
 
-    loadParkings();
+    var email = $('#managerEmail').val();
 
-    // Ajouter un gérant
-    $('#addManagerButton').on('click', function() {
-        if (!validateForm('#addManagerForm')) {
-            showMessage("Veuillez remplir tous les champs requis", 'error');
-            return;
-        }
-
-        var email = $('#managerEmail').val();
-        var parkings = $('#managerParkings').val();
-        var hireDate = $('#managerHireDate').val();
-
-        $.ajax({
-            url: '/add-gerant/',
-            method: 'POST',
-            data: JSON.stringify({
-                email: email,
-                parkings: parkings,
-                date_embauche: hireDate
-            }),
-            contentType: 'application/json',
-            success: function(response) {
-                $('#addManagerModal').modal('hide');
-                resetForm('#addManagerForm');
-                showMessage(response.message, 'success');
-
-                var formattedDate = formatDisplayDate(response.gerant.date_embauche);
-                
-                var newRow = '<tr data-id="' + response.gerant.id + '">...';  // Reste du code pour ajouter la ligne
-                $('#gerantTable tbody').append(newRow);
-                loadGerants();
-            },
-            error: function(xhr) {
-                showMessage(xhr.responseJSON.message, 'error');
-            }
-        });
-    });
-
-    // Éditer un gérant
-    $(document).on("click", ".edit-manager", function () {
-      var id = $(this).data("id");
-
-      $.ajax({
-        url: "/get-gerant/" + id + "/",
-        method: "GET",
-        success: function (response) {
-          $("#editManagerId").val(response.id);
-          $("#editManagerEmail").val(response.email);
-          $("#editManagerParkings").val(response.parkings).trigger("change");
-          $("#editManagerHireDate").val(response.date_embauche);
-          $("#editManagerModal").modal("show");
-          
-        },
-        error: function (xhr) {
-          showMessage(
-            "Erreur lors du chargement des données du gérant",
-            "error"
-          );
-        },
-      });
-
-      loadGerants();
-    });
-
-    // Mettre à jour un gérant
-    $('#updateManagerButton').on('click', function() {
-        if (!validateForm('#editManagerForm')) {
-            showMessage("Veuillez remplir tous les champs requis", 'error');
-            return;
-        }
-
-        var id = $('#editManagerId').val();
-        var email = $('#editManagerEmail').val();
-        var parkings = $('#editManagerParkings').val();
-        var hireDate = $('#editManagerHireDate').val();
-
-        $.ajax({
-            url: '/update-gerant/' + id + '/',
-            method: 'POST',
-            data: JSON.stringify({
-                email: email,
-                parkings: parkings,
-                date_embauche: hireDate
-            }),
-            contentType: 'application/json',
-            success: function(response) {
-                $('#editManagerModal').modal('hide');
-                showMessage(response.message, 'success');
-                loadGerants();
-            
-                var formattedDate = formatDisplayDate(response.gerant.date_embauche);
-                
-                var row = $('tr[data-id="' + id + '"]');
-                row.find('td:eq(2)').text(response.gerant.email);
-                row.find('td:eq(3)').text(response.gerant.parkings.join(', '));
-                row.find('td:eq(4)').text(formattedDate);
-                
-            },
-            error: function(xhr) {
-                showMessage(xhr.responseJSON.message, 'error');
-            }
-        });
+    $.ajax({
+      url: '/add-gerant/',
+      method: 'POST',
+      data: JSON.stringify({
+        email: email,
+      }),
+      contentType: 'application/json',
+      success: function(response) {
+        $('#addManagerModal').modal('hide');
+        resetForm('#addManagerForm');
+        showMessage(response.message, 'success');
         loadGerants();
+      },
+      error: function(xhr) {
+        showMessage(xhr.responseJSON.message, 'error');
+      }
     });
+  });
 
+   // Modifier la fonction d'édition d'un gérant
+  $(document).on("click", ".edit-manager", function () {
+    var id = $(this).data("id");
+
+    $.ajax({
+      url: "/get-gerant/" + id + "/",
+      method: "GET",
+      success: function (response) {
+        $("#editManagerId").val(response.id);
+        $("#editManagerEmail").val(response.email);
+        $("#editManagerModal").modal("show");
+      },
+      error: function (xhr) {
+        showMessage("Erreur lors du chargement des données du gérant", "error");
+      },
+    });
+     loadGerants();
+  });
+
+     
+
+ // Modifier la fonction de mise à jour d'un gérant
+  $('#updateManagerButton').on('click', function() {
+    if (!validateForm('#editManagerForm')) {
+      return;
+    }
+
+    var id = $('#editManagerId').val();
+    var email = $('#editManagerEmail').val();
+
+    $.ajax({
+      url: '/update-gerant/' + id + '/',
+      method: 'POST',
+      data: JSON.stringify({
+        email: email,
+      }),
+      contentType: 'application/json',
+      success: function(response) {
+        $('#editManagerModal').modal('hide');
+        showMessage(response.message, 'success');
+        loadGerants();
+      },
+      error: function(xhr) {
+        showMessage(xhr.responseJSON.message, 'error');
+      }
+    });
+  });
+  
     // Réinitialiser le formulaire lors de l'ouverture du modal d'ajout
     $('#addManagerModal').on('show.bs.modal', function() {
         resetForm('#addManagerForm');
