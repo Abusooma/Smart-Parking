@@ -19,6 +19,19 @@
             <label for="id_date_sortie">Date de départ</label>
             <input type="date" class="form-control" id="id_date_sortie" name="date_sortie" required>
           </div>
+          <div class="form-group">
+            <label for="id_matricule">Matricule de la voiture</label>
+            <div class="custom-select-wrapper">
+              <input type="text" class="form-control" id="id_matricule" name="matricule" required {% if is_client %}autocomplete="off"{% endif %}>
+              {% if is_client and user_matricules %}
+                <ul class="custom-select" id="matricule-list">
+                  {% for matricule in user_matricules %}
+                    <li data-value="{{ matricule.matricule }}">{{ matricule.matricule }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </div>
+          </div>
           <button type="submit" class="btn btn-primary btn-block">Réserver</button>
         </form>
       </div>
@@ -39,10 +52,10 @@
 {% block extra_script %}
 <script src="{% static 'bootstrap/js/jquery-3.6.0.min.js' %}"></script>
 <script>
-    var parkingId = '{{ parking.id }}';
-    var calculatePriceUrl = "{% url 'calculate-price' %}";
-    
     $(document).ready(function() {
+        var parkingId = '{{ parking.id }}';
+        var calculatePriceUrl = "{% url 'calculate-price' %}";
+        
         function updatePrice() {
             var dateArrive = $('#id_date_arrive').val();
             var dateSortie = $('#id_date_sortie').val();
@@ -65,6 +78,34 @@
         }
         
         $('#id_date_arrive, #id_date_sortie').on('change', updatePrice);
+
+        // Gestion de la liste des matricules
+        var $matriculeInput = $('#id_matricule');
+        var $matriculeList = $('#matricule-list');
+
+        $matriculeInput.on('focus input', function() {
+            var inputVal = $(this).val().toLowerCase();
+            $matriculeList.show();
+            $matriculeList.find('li').each(function() {
+                var liText = $(this).text().toLowerCase();
+                if (liText.indexOf(inputVal) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        $matriculeList.on('click', 'li', function() {
+            $matriculeInput.val($(this).text());
+            $matriculeList.hide();
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.custom-select-wrapper').length) {
+                $matriculeList.hide();
+            }
+        });
     });
 </script>
 {% endblock %}

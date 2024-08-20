@@ -5,15 +5,17 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h1 class="mb-4">Gestion des Parkings</h1>
+    <h1 class="mb-4 mt-4">Gestion des Parkings</h1>
 
     <div class="row mb-4">
+        {% if request.user.user_type == 'gerant' %}
         <div class="col-md-6">
             <button class="btn btn-primary" data-toggle="modal" data-target="#addParkingModal">
                 <i class="fas fa-plus"></i> Ajouter un parking
             </button>
         </div>
-        <div class="col-md-6">
+        {% endif %}
+        <div {% if request.user.user_type == 'gerant' %} class="col-md-6" {% endif %}>
             <form class="form-inline justify-content-md-end" id="searchForm">
                 <input class="form-control mr-sm-2" type="search" placeholder="Rechercher un parking" aria-label="Search" id="searchInput">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Rechercher</button>
@@ -21,7 +23,7 @@
         </div>
     </div>
 
-    <div id="messageContainer"></div>
+    <div id="messageContainer" class="mb-4"></div>
 
     <div class="table-responsive">
         <table class="table table-striped table-hover">
@@ -53,13 +55,19 @@
                         <button class="btn btn-sm btn-info" onclick="showParkingDetails({{ parking.id }})">
                             <i class="fas fa-info-circle"></i>
                         </button>
+                        {% if request.user.user_type == 'gerant' %}
                         <button class="btn btn-sm btn-primary" onclick="showEditParkingModal({{ parking.id }})">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal({{ parking.id }})">
                             <i class="fas fa-trash"></i>
                         </button>
+                        {% endif %}
                     </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">Aucun parking trouvé.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -208,6 +216,7 @@
     </div>
 </div>
 {% endblock %}
+
 {% block extra_script %}
 <script>
     let parkingToDelete = null;
@@ -222,6 +231,7 @@
                 </button>
             </div>
         `;
+        messageContainer.scrollIntoView({ behavior: 'smooth' });
     }
 
     function validateForm(form) {
@@ -268,36 +278,40 @@
         });
     }
 
-    // Fonction pour ajouter un parking au tableau
-function addParkingToTable(parking) {
-    var newRow = document.createElement('tr');
-    newRow.id = 'parking-' + parking.id;
-    newRow.innerHTML = `
-        <td>${parking.nom}</td>
-        <td>${parking.region}</td>
-        <td>${parking.nombre_place}</td>
-        <td>${parking.nombre_place_dispo}</td>
-        <td>${parking.tarif} Dinars</td>
-        <td>
-            <span class="badge ${parking.actif ? 'badge-success' : 'badge-danger'}">
-                ${parking.actif ? 'Actif' : 'Inactif'}
-            </span>
-        </td>
-        <td>
-            <button class="btn btn-sm btn-info" onclick="showParkingDetails(${parking.id})">
-                <i class="fas fa-info-circle"></i>
-            </button>
-            <button class="btn btn-sm btn-primary" onclick="showEditParkingModal(${parking.id})">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal(${parking.id})">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    `;
-    document.getElementById('parkingTableBody').appendChild(newRow);
-}
+    function addParkingToTable(parking) {
+        var tableBody = document.getElementById('parkingTableBody');
+        var emptyMessage = tableBody.querySelector('td[colspan="7"]');
+        if (emptyMessage) {
+            emptyMessage.remove();
+        }
 
+        var newRow = document.createElement('tr');
+        newRow.id = 'parking-' + parking.id;
+        newRow.innerHTML = `
+            <td>${parking.nom}</td>
+            <td>${parking.region}</td>
+            <td>${parking.nombre_place}</td>
+            <td>${parking.nombre_place_dispo}</td>
+            <td>${parking.tarif} Dinars</td>
+            <td>
+                <span class="badge ${parking.actif ? 'badge-success' : 'badge-danger'}">
+                    ${parking.actif ? 'Actif' : 'Inactif'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="showParkingDetails(${parking.id})">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="showEditParkingModal(${parking.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal(${parking.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(newRow);
+    }
 
     function showEditParkingModal(parkingId) {
         fetch('/get_parking_details/' + parkingId + '/')
@@ -346,35 +360,34 @@ function addParkingToTable(parking) {
         });
     }
 
-   // Fonction pour mettre à jour un parking dans le tableau
-function updateParkingInTable(parking) {
-    var row = document.getElementById('parking-' + parking.id);
-    if (row) {
-        row.innerHTML = `
-            <td>${parking.nom}</td>
-            <td>${parking.region}</td>
-            <td>${parking.nombre_place}</td>
-            <td>${parking.nombre_place_dispo}</td>
-            <td>${parking.tarif} Dinars</td>
-            <td>
-                <span class="badge ${parking.actif ? 'badge-success' : 'badge-danger'}">
-                    ${parking.actif ? 'Actif' : 'Inactif'}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-sm btn-info" onclick="showParkingDetails(${parking.id})">
-                    <i class="fas fa-info-circle"></i>
-                </button>
-                <button class="btn btn-sm btn-primary" onclick="showEditParkingModal(${parking.id})">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal(${parking.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
+    function updateParkingInTable(parking) {
+        var row = document.getElementById('parking-' + parking.id);
+        if (row) {
+            row.innerHTML = `
+                <td>${parking.nom}</td>
+                <td>${parking.region}</td>
+                <td>${parking.nombre_place}</td>
+                <td>${parking.nombre_place_dispo}</td>
+                <td>${parking.tarif} Dinars</td>
+                <td>
+                    <span class="badge ${parking.actif ? 'badge-success' : 'badge-danger'}">
+                        ${parking.actif ? 'Actif' : 'Inactif'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="showParkingDetails(${parking.id})">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="showEditParkingModal(${parking.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal(${parking.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+        }
     }
-}
 
     function showParkingDetails(parkingId) {
         fetch('/get_parking_details/' + parkingId + '/')
@@ -385,7 +398,7 @@ function updateParkingInTable(parking) {
                 <p><strong>Région:</strong> ${data.region}</p>
                 <p><strong>Nombre de places:</strong> ${data.nombre_place}</p>
                 <p><strong>Places disponibles:</strong> ${data.nombre_place_dispo}</p>
-                <p><strong>Tarif:</strong> ${data.tarif} €</p>
+                <p><strong>Tarif:</strong> ${data.tarif} Dinars</p>
                 <p><strong>Taux d'occupation:</strong> ${data.taux_occupation.toFixed(2)}%</p>
                 <p><strong>Statut:</strong> ${data.actif ? 'Actif' : 'Inactif'}</p>
             `;
@@ -404,7 +417,6 @@ function updateParkingInTable(parking) {
 
     function deleteParking() {
         if (parkingToDelete) {
-            console.log('Tentative de suppression du parking:', parkingToDelete);
             $.ajax({
                 url: '{% url "delete_parking" %}',
                 type: 'POST',
@@ -413,49 +425,52 @@ function updateParkingInTable(parking) {
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(response) {
-                    console.log('Réponse du serveur:', response);
                     if (response.success) {
-                        console.log('Suppression réussie');
                         $('#deleteParkingModal').modal('hide');
                         $('#parking-' + parkingToDelete).remove();
                         parkingToDelete = null;
+                        showMessage('Parking supprimé avec succès.');
+                        
+                        // Check if table is empty after deletion
+                        var tableBody = document.getElementById('parkingTableBody');
+                        if (tableBody.children.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun parking trouvé.</td></tr>';
+                        }
                     } else {
-                        console.error('Erreur lors de la suppression:', response.error);
-                        alert('Erreur lors de la suppression du parking : ' + response.error);
+                        showMessage('Erreur lors de la suppression du parking : ' + response.error, true);
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Erreur AJAX:', status, error);
-                    console.log('Réponse complète:', xhr.responseText);
-                    alert('Une erreur est survenue lors de la suppression du parking. Veuillez vérifier la console pour plus de détails.');
+                    showMessage('Une erreur est survenue lors de la suppression du parking.', true);
                 }
             });
         } else {
-            console.error('Aucun parking à supprimer');
+            showMessage('Aucun parking à supprimer', true);
         }
     }
 
-   // Fonction de recherche mise à jour
-document.getElementById('searchForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const searchQuery = document.getElementById('searchInput').value;
-    fetch(`/search_parkings/?q=${encodeURIComponent(searchQuery)}`)
-    .then(response => response.json())
-    .then(data => {
-        const tableBody = document.getElementById('parkingTableBody');
-        tableBody.innerHTML = '';
-        data.parkings.forEach(parking => {
-            addParkingToTable(parking);
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const searchQuery = document.getElementById('searchInput').value;
+        fetch(`/search_parkings/?q=${encodeURIComponent(searchQuery)}`)
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.getElementById('parkingTableBody');
+            tableBody.innerHTML = '';
+            if (data.parkings.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Aucun parking trouvé.</td></tr>';
+            } else {
+                data.parkings.forEach(parking => {
+                    addParkingToTable(parking);
+                });
+            }
+        })
+        .catch(error => {
+            showMessage('Une erreur est survenue lors de la recherche.', true);
         });
-    })
-    .catch(error => {
-        showMessage('Une erreur est survenue lors de la recherche.', true);
     });
-});
-
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialiser les modals si vous utilisez Bootstrap 4
         $('.modal').modal({
             show: false
         });

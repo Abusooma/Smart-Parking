@@ -406,3 +406,27 @@ a[aria-expanded="true"] {
 .badge {
   white-space: nowrap;
 }
+
+/* Style CSS pour les matricules */
+
+.custom-select-wrapper {
+  position: relative;
+}
+.custom-select {
+  display: none;
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  background-color: white;
+  z-index: 1000;
+}
+.custom-select option {
+  padding: 10px;
+  cursor: pointer;
+}
+.custom-select option:hover {
+  background-color: #f8f9fa;
+}

@@ -110,6 +110,7 @@ class Reservation(models.Model):
     date_sortie = models.DateTimeField()
     status = models.CharField(max_length=25, choices=STATUS, default='active')
     access_code = models.CharField(max_length=7, blank=True, null=True)
+    matricule = models.CharField(max_length=30, null=True, blank=True)
 
     @property
     def verif_is_expired(self):
@@ -125,13 +126,9 @@ class Reservation(models.Model):
 
     @property
     def calculate_price(self):
-        duration = (self.date_sortie - self.date_arrive).days
-
-        if duration == 0:
-            duration += 1
-
-        if (self.date_sortie - self.date_arrive).seconds > 0:
-            duration += 1
+        duration = (self.date_sortie - self.date_arrive).days + 1
+        if duration <= 0:
+            duration = 1
 
         return float(self.parking.tarif) * duration 
 
@@ -139,4 +136,11 @@ class Reservation(models.Model):
         return f"Réservation {self.id} pour {self.client} au {self.parking}"
 
 
+class Matricule(models.Model):
+    matricule = models.CharField(max_length=30)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.matricule
+    
 

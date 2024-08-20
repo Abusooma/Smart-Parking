@@ -31,7 +31,9 @@
                         <th>ID</th>
                         <th>Email</th>
                         <th>Date d'inscription</th>
+                        {% if request.user.user_type == 'gerant' %}
                         <th>Nombre de réservations</th>
+                        {% endif %}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -113,15 +115,19 @@
             } else {
                 clients.forEach(function (client) {
                     const row = `
-                        <tr>
+                        <tr {% if request.user.user_type == 'admin' %}class="text-center" {% endif %}>
                             <td>${client.id}</td>
                             <td>${client.email}</td>
                             <td>${client.date_inscription}</td>
+                            {% if request.user.user_type == 'gerant' %}
                             <td>${client.reservations_count}</td>
+                            {% endif %}
                             <td>
+                                {% if request.user.user_type == 'gerant' %}
                                 <a href="/get-client-details/${client.id}/" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i> Détails
                                 </a>
+                                {% endif %}
                                 <button class="btn btn-sm btn-danger block-client-btn" data-client-id="${client.id}">
                                     <i class="fas fa-ban"></i> Bloquer
                                 </button>

@@ -43,4 +43,7 @@ urlpatterns = [
     path('get_parking_details/<int:parking_id>/', views.get_parking_details, name='get_parking_details'),
     path('delete_parking/', views.delete_parking, name='delete_parking'),
     path('search_parkings/', views.search_parkings, name='search_parkings'),
+    # Dashboard Client
+    path('dashboard/type/user-client/', views.make_reservation, name='reserver'),
+    path('dashboard/type/user-client/get-matricules/', views.get_matricules, name='get_matricules'),
 ]

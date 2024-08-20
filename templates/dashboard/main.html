@@ -32,21 +32,38 @@
               <i class="fas fa-home"></i> Accueil
             </a>
           </li>
+          {% if request.user.user_type == 'client' %}
+          <li class="{% if request.resolver_match.url_name == 'reserver' %}active{% endif %}">
+            <a href="{% url 'reserver' %}"><i class="fas fa-car"></i> Réserver un parking</a>
+          </li class="{% if request.resolver_match.url_name == 'historique_client' %}active{% endif %}">
+          <li>
+            <a href="#"><i class="fas fa-history"></i> Historique</a>
+          </li>
+          {% endif %}
+          {% if request.user.user_type == 'admin' %}
           <li class="{% if request.resolver_match.url_name == 'gerants' %}active{% endif %}">
             <a href="{% url 'gerants' %}"><i class="fas fa-user-tie"></i> Gérants</a>
           </li>
+          {% endif %}
+          {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
           <li class="{% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
             <a href="{% url 'clients' %}"><i class="fas fa-users"></i> Clients</a>
           </li>
+           {% endif %}
           <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
-            <a href="{% url 'reservations' %}"><i class="fas fa-calendar-check"></i> Réservations</a>
+            <a href="{% url 'reservations' %}"><i class="fas fa-calendar-check"></i>
+              {%if request.user.user_type == 'client' %} Mes{% endif %} Réservations</a>
           </li>
+          {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
           <li class="{% if request.resolver_match.url_name == 'parkings' %}active{% endif %}">
             <a href="{% url 'parkings' %}"><i class="fas fa-parking"></i> Parkings</a>
           </li>
+          {% endif %}
+          {% if request.user.user_type == 'admin' %}
           <li class="{% if request.resolver_match.url_name == 'regions' %}active{% endif %}">
             <a href="{% url 'regions' %}"><i class="fas fa-map-marker-alt"></i> Régions</a>
           </li>
+          {% endif %}
           <li class="{% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
             <a href="#"><i class="fas fa-cog"></i> Paramètres</a>
           </li>
