@@ -144,6 +144,7 @@ def paiement_view(request):
 
         if created:
             password = generate_password()
+            print(password)
             user.set_password(password)
             user.save()
             email_for_new_user(
@@ -230,6 +231,7 @@ def dashboard_view(request):
     user_logged = request.user
 
     gerants = Gerant.objects.all()
+    total_region = Region.objects.all().count()
 
     if user_logged.user_type == 'admin':
         parkings = Parking.objects.all()
@@ -245,9 +247,12 @@ def dashboard_view(request):
             parking__gerant__user=user_logged)
     
     else:
-        parkings = Parking.objects.none()
+        parkings = Parking.objects.all()
         clients = Client.objects.none()
-        reservations = Reservation.objects.none()
+        reservations = Reservation.objects.filter(client__user=user_logged)
+        total_reservation_active = reservations.filter(status='active').count()
+    
+    total_reservation_active = None
 
     total_parking = parkings.count()
     total_gerant = gerants.count()
@@ -265,10 +270,12 @@ def dashboard_view(request):
         'total_gerant': total_gerant,
         'total_client': total_client,
         'total_reservation': total_reservation,
+        'total_reservation_active': total_reservation_active,
         'total_revenu': total_revenu,
         'parking_populaires': parking_populaires,
-        'recervation_recentes': reservations.order_by('-date_arrive')[:4],
-        'total_parking': total_parking
+        'recervation_recentes': reservations.order_by('-date_arrive')[:3],
+        'total_parking': total_parking,
+        'total_region': total_region
     }
 
     return render(request, 'smartparking/dashboard.html', context=context)
@@ -306,6 +313,7 @@ def add_gerant(request):
         )
         if created:
             password = generate_password()
+            print(password)
             user.set_password(password)
             user.save()
             email_for_new_user(
@@ -564,32 +572,44 @@ def get_reservation_details(request, reservation_id):
     return JsonResponse(data)
 
 
+@require_http_methods(["POST"])
 def update_reservation(request, reservation_id):
     reservation = get_object_or_404(Reservation, id=reservation_id)
-    if request.method == 'POST':
-        reservation.parking_id = request.POST.get('parking')
-        reservation.date_arrive = request.POST.get('date_arrive')
-        reservation.date_sortie = request.POST.get('date_sortie')
-        statut = request.POST.get('statut')
-        if statut == 'Confirmé':
-            reservation.is_expired = True
-            reservation.is_cancel = False
-        elif statut == 'En cours':
-            reservation.is_expired = False
-            reservation.is_cancel = False
-        elif statut == 'Annulé':
-            reservation.is_cancel = True
+
+    if reservation.status == 'expired':
+        return JsonResponse({'success': False, 'message': 'Cannot modify an expired reservation'}, status=400)
+
+    parking_id = request.POST.get('parking')
+    date_arrive = request.POST.get('date_arrive')
+    date_sortie = request.POST.get('date_sortie')
+    annuler = request.POST.get('annuler') == 'on'
+
+    try:
+        reservation.parking = get_object_or_404(Parking, id=parking_id)
+        reservation.date_arrive = date_arrive
+        reservation.date_sortie = date_sortie
+
+        if annuler:
+            reservation.status = 'cancel'
+        else:
+            reservation.status = 'active'
+
         reservation.save()
-        return JsonResponse({'success': True, 'reservation': {
-            'id': reservation.id,
-            'client': str(reservation.client),
-            'parking': str(reservation.parking),
-            'date_arrive': reservation.date_arrive.strftime('%Y-%m-%d %H:%M'),
-            'date_sortie': reservation.date_sortie.strftime('%Y-%m-%d %H:%M'),
-            'statut': 'Confirmé' if reservation.is_expired else 'En cours' if not reservation.is_cancel else 'Annulé',
-            'access_code': reservation.access_code,
-        }})
-    return JsonResponse({'success': False}, status=400)
+
+        return JsonResponse({
+            'success': True,
+            'reservation': {
+                'id': reservation.id,
+                'client': str(reservation.client),
+                'parking': str(reservation.parking),
+                'date_arrive': reservation.date_arrive.strftime('%Y-%m-%d %H:%M'),
+                'date_sortie': reservation.date_sortie.strftime('%Y-%m-%d %H:%M'),
+                'statut': reservation.status,
+                'access_code': reservation.access_code,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
 def delete_reservation(request, reservation_id):
@@ -672,7 +692,7 @@ def get_region(request, region_id):
 @login_required
 def get_list_parkings(request):
     user_logged = request.user
-    if user_logged.user_type == 'admin':
+    if user_logged.user_type == 'admin' or user_logged.user_type == 'client':
         parkings = Parking.objects.all()
     elif user_logged.user_type == 'gerant':
         parkings = Parking.objects.filter(gerant__user=user_logged)
@@ -882,3 +902,15 @@ def get_matricules(request):
     matricules = Matricule.objects.filter(
         client=client).values_list('matricule', flat=True)
     return JsonResponse(list(matricules), safe=False)
+
+
+@require_http_methods(["GET"])
+def get_parkings_by_region(request, region_id):
+    parkings = Parking.objects.filter(region_id=region_id)
+    data = [{"id": parking.id, "nom": parking.nom} for parking in parkings]
+    return JsonResponse({"parkings": data})
+
+# SECTION PARAMETRE
+
+def setup_parameter(request):
+    return render(request, 'smartparking/parametre.html')

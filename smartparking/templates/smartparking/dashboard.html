@@ -1,5 +1,12 @@
-{% extends 'dashboard/main.html' %} {% load static %} {% block title %}
-Dashboard Admin{% endblock %} {% block content %}
+{% extends 'dashboard/main.html' %} 
+
+{% load static %} 
+
+{% block title %} Dashboard Admin 
+{% endblock %} 
+
+{% block content %}
+{% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
 <div class="container-fluid dashboard-content">
   <h2 class="mb-4">Tableau de bord</h2>
   <!-- Quick Stats -->
@@ -24,14 +31,16 @@ Dashboard Admin{% endblock %} {% block content %}
       </div>
     </div>
     {% endif %}
+    {% if request.user.user_type == 'admin' %}
     <div class="col-md-3">
       <div class="card text-white bg-success">
         <div class="card-body">
-          <h5 class="card-title">Clients</h5>
+          <h5 class="card-title">Regions</h5>
           <p class="card-text display-4">{{ total_client }}</p>
         </div>
       </div>
     </div>
+    {% endif %}
     <div class="col-md-3">
       <div class="card text-white bg-warning">
         <div class="card-body">
@@ -101,4 +110,67 @@ Dashboard Admin{% endblock %} {% block content %}
     </div>
   </div>
 </div>
+{% else %}
+   <div class="container-fluid dashboard-content">
+        <h2 class="mb-4">Tableau de bord client</h2>
+        
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="card text-white bg-primary">
+              <div class="card-body">
+                <h5 class="card-title">Réservations actives</h5>
+                <p class="card-text display-4">{{ total_reservation_active }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card text-white bg-success">
+              <div class="card-body">
+                <h5 class="card-title">Total des réservations</h5>
+                <p class="card-text display-4">{{ total_reservation }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Reservations -->
+        <div class="row">
+           <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">Réservations récentes</div>
+        {% if recervation_recentes %}
+          <ul class="list-group list-group-flush">
+            {% for reservation in recervation_recentes %}
+              <li class="list-group-item">
+                <strong>{{ reservation.parking.nom }}</strong> - Du {{reservation.date_arrive|date:"d/m/Y"}} au 
+                {{reservation.date_sortie|date:"d/m/Y"}}
+                <span class="badge {% if reservation.is_expired %}badge-success{% else %}badge-warning{% endif %} float-right">
+                  {% if reservation.is_expired %}Confirmée{% else %}En attente{% endif %}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="card-body">
+            <p class="text-muted">Aucune réservation récente à afficher pour le moment.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-header">
+                Parkings favoris
+              </div>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item">Centre-ville</li>
+                <li class="list-group-item">Quartier Nord</li>
+                <li class="list-group-item">Bord de rivière</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+{% endif %}
 {% endblock %}

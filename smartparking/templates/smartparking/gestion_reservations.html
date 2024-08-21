@@ -165,49 +165,78 @@
     </div>
 </div>
 
-<!-- Modal Modifier la réservation -->
-<div class="modal fade" id="modifierReservationModal" tabindex="-1" role="dialog" aria-labelledby="modifierReservationModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modifierReservationModalLabel">Modifier la réservation</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="modifierReservationForm">
-                    <!-- Les champs seront insérés dynamiquement -->
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="confirmerModificationBtn">Enregistrer les modifications</button>
+<!-- Modifier la réservation Modal -->
+        <div class="modal fade" id="modifierReservationModal" tabindex="-1" role="dialog" aria-labelledby="modifierReservationModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modifierReservationModalLabel">Modifier la réservation</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="modifierReservationForm">
+                            <input type="hidden" id="reservationId" name="reservationId">
+                            <div class="form-group">
+                                <label for="region">Région</label>
+                                <select class="form-control" id="region" name="region" required>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="parking">Parking</label>
+                                <select class="form-control" id="parking" name="parking" required>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="date_arrive">Date d'arrivée</label>
+                                <input type="datetime-local" class="form-control" id="date_arrive" name="date_arrive" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="date_sortie">Date de sortie</label>
+                                <input type="datetime-local" class="form-control" id="date_sortie" name="date_sortie" required>
+                            </div>
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="annuler" name="annuler">
+                                    <label class="form-check-label" for="annuler">
+                                        Annuler la réservation
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-primary" id="confirmerModificationBtn">Enregistrer les modifications</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Modal Supprimer la réservation -->
-<div class="modal fade" id="supprimerReservationModal" tabindex="-1" role="dialog" aria-labelledby="supprimerReservationModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="supprimerReservationModalLabel">Confirmer la suppression</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-danger" id="confirmerSuppressionBtn">Confirmer la suppression</button>
+<!-- Supprimer la réservation Modal -->
+        <div class="modal fade" id="supprimerReservationModal" tabindex="-1" role="dialog" aria-labelledby="supprimerReservationModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="supprimerReservationModalLabel">Confirmer la suppression</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-danger" id="confirmerSuppressionBtn">Confirmer la suppression</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block extra_script %}
@@ -239,6 +268,149 @@
                 }
             });
         });
-    });
+    
+        // Modify reservation
+            $('.modify-reservation').on('click', function () {
+                const reservationId = $(this).data('id');
+                const isExpired = $(this).data('expired');
+
+                if (isExpired) {
+                    alert("Vous ne pouvez pas modifier une réservation expirée.");
+                    return;
+                }});
+    
+        // Fetch reservation details and populate the form
+                $.ajax({
+                    url: `/reservations/${reservationId}/details/`,
+                    method: 'GET',
+                    success: function (data) {
+                        $('#reservationId').val(data.id);
+                        $('#parking').val(data.parking_id);
+                        $('#date_arrive').val(data.date_arrive);
+                        $('#date_sortie').val(data.date_sortie);
+                        $('#annuler').prop('checked', data.statut === 'Annulé');
+
+                        // Populate regions dropdown
+                        $.ajax({
+                            url: '/get_regions/',
+                            method: 'GET',
+                            success: function (regionData) {
+                                const regionSelect = $('#region');
+                                regionSelect.empty();
+                                regionData.regions.forEach(function (region) {
+                                    regionSelect.append($('<option>', {
+                                        value: region.id,
+                                        text: region.nom
+                                    }));
+                                });
+                                regionSelect.val(data.region_id);
+                                
+                                // Populate parkings dropdown based on selected region
+                                updateParkingDropdown(data.region_id, data.parking_id);
+                            }
+                        });
+
+                        $('#modifierReservationModal').modal('show');
+                    },
+                    error: function () {
+                        alert('Une erreur est survenue lors du chargement des détails de la réservation.');
+                    }
+                });
+
+            // Update parking dropdown when region changes
+            $('#region').on('change', function () {
+                updateParkingDropdown($(this).val());
+            });
+
+            function updateParkingDropdown(regionId, selectedParkingId = null) {
+                $.ajax({
+                    url: `/get_parkings/${regionId}/`,
+                    method: 'GET',
+                    success: function (parkingData) {
+                        const parkingSelect = $('#parking');
+                        parkingSelect.empty();
+                        parkingData.parkings.forEach(function (parking) {
+                            parkingSelect.append($('<option>', {
+                                value: parking.id,
+                                text: parking.nom
+                            }));
+                        });
+                        if (selectedParkingId) {
+                            parkingSelect.val(selectedParkingId);
+                        }
+                    }
+                });
+            }
+
+            // Submit modification
+            $('#confirmerModificationBtn').on('click', function () {
+                const formData = $('#modifierReservationForm').serialize();
+                const reservationId = $('#reservationId').val();
+
+                $.ajax({
+                    url: `/reservations/${reservationId}/update/`,
+                    method: 'POST',
+                    data: formData,
+                    success: function (data) {
+                        if (data.success) {
+                            // Update the reservation in the table
+                            updateReservationInTable(data.reservation);
+                            $('#modifierReservationModal').modal('hide');
+                        } else {
+                            alert('Une erreur est survenue lors de la mise à jour de la réservation.');
+                        }
+                    },
+                    error: function () {
+                        alert('Une erreur est survenue lors de la mise à jour de la réservation.');
+                    }
+                });
+            });
+
+            // Delete reservation
+            $('.delete-reservation').on('click', function () {
+                const reservationId = $(this).data('id');
+                const isExpired = $(this).data('expired');
+
+                if (isExpired) {
+                    alert("Vous ne pouvez pas supprimer une réservation expirée.");
+                    return;
+                }
+
+                $('#supprimerReservationModal').modal('show');
+                $('#confirmerSuppressionBtn').data('id', reservationId);
+            });
+
+            $('#confirmerSuppressionBtn').on('click', function () {
+                const reservationId = $(this).data('id');
+
+                $.ajax({
+                    url: `/reservations/${reservationId}/delete/`,
+                    method: 'POST',
+                    success: function (data) {
+                        if (data.success) {
+                            // Remove the reservation from the table
+                            $(`tr[data-id="${reservationId}"]`).remove();
+                            $('#supprimerReservationModal').modal('hide');
+                        } else {
+                            alert('Une erreur est survenue lors de la suppression de la réservation.');
+                        }
+                    },
+                    error: function () {
+                        alert('Une erreur est survenue lors de la suppression de la réservation.');
+                    }
+                });
+            });
+
+            function updateReservationInTable(reservation) {
+                const row = $(`tr[data-id="${reservation.id}"]`);
+                row.find('.parking').text(reservation.parking);
+                row.find('.date-arrive').text(reservation.date_arrive);
+                row.find('.date-sortie').text(reservation.date_sortie);
+                row.find('.statut').text(reservation.statut);
+                row.find('.access-code').text(reservation.access_code);
+            };        
+                
+
+        });
 </script>
 {% endblock %}
