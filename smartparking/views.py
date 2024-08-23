@@ -156,27 +156,25 @@ def reservation_view(request, *args, **kwargs):
     if request.method == 'POST':
         date_arrive = request.POST.get('date_arrive')
         date_sortie = request.POST.get('date_sortie')
+        matricule = request.POST.get("matricule_serie") + request.POST.get("matricule_numero")
 
         # Convertir les dates pour la comparaison
-        date_arrive_dt = datetime.strptime(date_arrive, '%Y-%m-%d')
-        date_sortie_dt = datetime.strptime(date_sortie, '%Y-%m-%d')
+
+        date_arrive_dt = timezone.make_aware(datetime.strptime(date_arrive, '%Y-%m-%d'))
+        date_sortie_dt = timezone.make_aware(datetime.strptime(date_sortie, '%Y-%m-%d'))
         
-        # if request.user.is_authenticated and hasattr(request.user, 'gerant_profile'):
-        # # Vérification de l'existence d'une réservation similaire
-        #     reservation_existante = Reservation.objects.filter(
-        #         client=request.user.client_profile,
-        #         parking=parking,
-        #         date_arrive=date_arrive_dt,
-        #         date_sortie=date_sortie_dt
-        #     ).exists()
+        # Vérification de l'existence d'une réservation similaire
 
-        #     if reservation_existante:
-        #         messages.warning(request, "Une réservation avec les mêmes dates existe déjà pour ce parking.")
-        #         return redirect("home")
+        reservation_existante = Reservation.objects.filter(
+            parking=parking,
+            date_arrive=date_arrive_dt,
+            date_sortie=date_sortie_dt,
+            matricule=matricule
+        ).exists()
 
-        matricule_serie = request.POST.get('matricule_serie')
-        matricule_numero = request.POST.get('matricule_numero')
-        matricule = matricule_serie + matricule_numero
+        if reservation_existante:
+            messages.warning(request, "Une réservation avec les mêmes dates et matricule existe déjà pour ce parking.")
+            return redirect("home")
 
         request.session['date_arrive'] = date_arrive
         request.session['date_sortie'] = date_sortie

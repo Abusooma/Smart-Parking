@@ -12,19 +12,11 @@
         <form id="reservation-form" method="post">
           {% csrf_token %}
           <div class="form-group">
-            <label for="id_date_arrive">Date d'arrivée</label>
-            <input type="date" class="form-control" id="id_date_arrive" name="date_arrive" required>
-          </div>
-          <div class="form-group">
-            <label for="id_date_sortie">Date de départ</label>
-            <input type="date" class="form-control" id="id_date_sortie" name="date_sortie" required>
-          </div>
-          <div class="form-group">
             <label for="id_matricule">Matricule de la voiture</label>
             <div class="custom-select-wrapper d-flex">
               <input type="text" class="form-control me-2" id="id_matricule_serie" name="matricule_serie" placeholder="Série" maxlength="3" required {% if is_client %}autocomplete="off"{% endif %}>
               <div class="custom-select-wrapper flex-grow-1">
-                <input type="text" class="form-control" id="id_matricule_ville" name="matricule_ville" placeholder="تونس" readonly>
+                <input type="text" class="form-control text-center" id="id_matricule_ville" name="matricule_ville" placeholder="تونس" readonly>
               </div>
               <input type="text" class="form-control ms-2" id="id_matricule_numero" name="matricule_numero" placeholder="Numéro" maxlength="4" required {% if is_client %}autocomplete="off"{% endif %}>
             </div>
@@ -35,6 +27,14 @@
                 {% endfor %}
               </ul>
             {% endif %}
+          </div>
+          <div class="form-group">
+            <label for="id_date_arrive">Date d'arrivée</label>
+            <input type="date" class="form-control" id="id_date_arrive" name="date_arrive" required>
+          </div>
+          <div class="form-group">
+            <label for="id_date_sortie">Date de départ</label>
+            <input type="date" class="form-control" id="id_date_sortie" name="date_sortie" required>
           </div>
           <button type="submit" class="btn btn-primary btn-block">Réserver</button>
         </form>
