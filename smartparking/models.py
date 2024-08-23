@@ -105,7 +105,7 @@ class Reservation(models.Model):
         ('cancel', 'annulée')
     ]
     parking = models.ForeignKey(Parking, on_delete=models.CASCADE, blank=True, related_name='reservations')
-    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     date_arrive = models.DateTimeField()
     date_sortie = models.DateTimeField()
     status = models.CharField(max_length=25, choices=STATUS, default='active')
@@ -125,6 +125,9 @@ class Reservation(models.Model):
 
     @property
     def calculate_price(self):
+        if self.client.user_type == 'gerant':
+            return 0
+        
         duration = (self.date_sortie - self.date_arrive).days + 1
         if duration <= 0:
             duration = 1
@@ -137,7 +140,7 @@ class Reservation(models.Model):
 
 class Matricule(models.Model):
     matricule = models.CharField(max_length=30)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.matricule

@@ -79,59 +79,6 @@ def logout_view(request):
     return redirect('home')
 
 
-# def reservation_view(request, *args, **kwargs):
-#     pk = kwargs.get('pk')
-#     parking = get_object_or_404(Parking, pk=pk)
-
-#     if parking.nombre_place_dispo() == 0:
-#         messages.warning(request, "Le parking selectionné n'a plus de place disponible pour une reservation..!")
-#         return redirect("home")
-    
-    
-#     parking_nom = parking.nom
-#     region_nom = parking.region.nom
-
-#     request.session['parking_id'] = parking.id
-
-#     user_matricules = []
-#     is_client = False
-
-#     if request.user.is_authenticated and hasattr(request.user, 'client_profile'):
-#         # L'utilisateur est connecté et est un client
-#         user_matricules = Matricule.objects.filter(
-#             client=request.user.client_profile)
-#         is_client = True
-
-#     if request.method == 'POST':
-#         all_reservations = Reservation.objects.all()
-#         date_arrive = request.POST.get('date_arrive')
-#         date_sortie = request.POST.get('date_sortie')
-
-#         # verif_date_arrive = datetime.strptime(date_arrive, '%Y-%m-%d')
-#         # verif_date_sortie = datetime.strptime(date_sortie, '%Y-%m-%d')
-#         # for reservation in all_reservations:
-#         #     if all(reservation.client==user.client_profile, reservation.date_arrive==verif_date_arrive, reservation.date_sortie==verif_date_sortie, reservation.parking==parking):
-#         #         messages.warning(request, "Une reservation a ces dates precise existe deja pour ce parking")
-#         # # recupere matricule
-#         matricule_serie = request.POST.get('matricule_serie')
-#         matricule_numero = request.POST.get('matricule_numero')
-#         matricule = matricule_serie + matricule_numero
-
-#         request.session['date_arrive'] = date_arrive
-#         request.session['date_sortie'] = date_sortie
-#         request.session['matricule'] = matricule
-
-#         return redirect('paiement')
-
-#     context = {
-#         'parking': parking,
-#         'parking_nom': parking_nom,
-#         'region_nom': region_nom,
-#         'user_matricules': user_matricules,
-#         'is_client': is_client,
-#     }
-#     return render(request, 'smartparking/reservation.html', context=context)
-
 def reservation_view(request, *args, **kwargs):
     pk = kwargs.get('pk')
     parking = get_object_or_404(Parking, pk=pk)
@@ -150,7 +97,7 @@ def reservation_view(request, *args, **kwargs):
 
     if request.user.is_authenticated and hasattr(request.user, 'client_profile'):
         # L'utilisateur est connecté et est un client
-        user_matricules = Matricule.objects.filter(client=request.user.client_profile)
+        user_matricules = Matricule.objects.filter(client=request.user)
         is_client = True
 
     if request.method == 'POST':
@@ -223,8 +170,6 @@ def paiement_view(request):
         user, created = User.objects.get_or_create(
             email=email, defaults={'user_type': 'client'})
         
-        
-
         if created:
             password = generate_password()
             user.set_password(password)
@@ -235,12 +180,11 @@ def paiement_view(request):
             # Cas où le gérant fait une réservation dans son propre parking
             if user.user_type == 'gerant' and parking in Parking.objects.filter(gerant__user=user):
                 user.is_new_user = False
-                gerant = user.gerant_profile
                 matricule_obj, _ = Matricule.objects.get_or_create(
                     matricule=matricule, client=user)
                 reservation = Reservation.objects.create(
                     parking=parking,
-                    client=gerant,
+                    client=user,
                     date_arrive=date_arrive,
                     date_sortie=date_sortie,
                     access_code=Reservation().generate_access_code(),
@@ -310,7 +254,7 @@ def calculate_price(request):
         parking = get_object_or_404(Parking, id=parking_id)
         date_arrive = datetime.strptime(date_arrive, '%Y-%m-%d')
         date_sortie = datetime.strptime(date_sortie, '%Y-%m-%d')
-
+        
         duration = (date_sortie - date_arrive).days + 1
 
         if duration <= 0:
@@ -960,8 +904,7 @@ def search_parkings(request):
 def make_reservation(request):
     if request.method == "GET":
         parkings = Parking.objects.filter(actif=True)
-        client = Client.objects.get(user=request.user)
-        matricules = Matricule.objects.filter(client=client)
+        matricules = Matricule.objects.filter(client=request.user)
 
         context = {
             'parkings': parkings,
@@ -971,9 +914,7 @@ def make_reservation(request):
 
     elif request.method == "POST":
         parking_id = request.POST.get('parking_id')
-        matricule_serie = request.POST.get('matricule_serie')
-        matricule_numero = request.POST.get('matricule_numero')
-        matricule = matricule_serie + matricule_numero
+        matricule = request.POST.get('matricule_serie') + request.POST.get('matricule_numero')   
         date_arrive = request.POST.get('date_arrive')
         date_sortie = request.POST.get('date_sortie')
 
@@ -981,17 +922,16 @@ def make_reservation(request):
         if parking.nombre_place_dispo() <= 0:
             return JsonResponse({'status': 'error', 'message': 'Pas de place disponible'})
 
-        client = Client.objects.get(user=request.user)
         reservation = Reservation.objects.create(
             parking=parking,
-            client=client,
+            client=request.user,
             date_arrive=datetime.strptime(date_arrive, '%Y-%m-%d'),
             date_sortie=datetime.strptime(date_sortie, '%Y-%m-%d'),
             matricule=matricule,
             access_code=Reservation().generate_access_code()
         )
 
-        Matricule.objects.get_or_create(matricule=matricule, client=client)
+        Matricule.objects.get_or_create(matricule=matricule, client=request.user)
 
         return JsonResponse({
             'status': 'success',
@@ -1003,9 +943,8 @@ def make_reservation(request):
 
 @login_required
 def get_matricules(request):
-    client = Client.objects.get(user=request.user)
     matricules = Matricule.objects.filter(
-        client=client).values_list('matricule', flat=True)
+        client=request.user).values_list('matricule', flat=True)
     return JsonResponse(list(matricules), safe=False)
 
 
