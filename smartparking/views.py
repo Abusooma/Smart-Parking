@@ -192,6 +192,23 @@ def paiement_view(request):
             email_for_new_user(
                 request, user, password, path_template='smartparking/emails/send_email_to_new_user.html')
         else:
+            # Cas où le gérant fait une réservation dans son propre parking
+            if user.user_type == 'gerant' and parking in Parking.objects.filter(gerant__user=user):
+                user.is_new_user = False
+                matricule_obj, _ = Matricule.objects.get_or_create(
+                    matricule=matricule, client=user)
+                reservation = Reservation.objects.create(
+                    parking=parking,
+                    client=user,
+                    date_arrive=date_arrive,
+                    date_sortie=date_sortie,
+                    access_code=Reservation().generate_access_code(),
+                    matricule=matricule
+                )
+
+                email_confirm_reservation(request, user, reservation)
+                return redirect('confirm_reservation', reservation_id=reservation.id)
+
             user.is_new_user = False
             user.save()
 
@@ -250,7 +267,7 @@ def calculate_price(request):
         parking = get_object_or_404(Parking, id=parking_id)
         date_arrive = datetime.strptime(date_arrive, '%Y-%m-%d')
         date_sortie = datetime.strptime(date_sortie, '%Y-%m-%d')
-
+        
         duration = (date_sortie - date_arrive).days + 1
 
         if duration <= 0:
@@ -963,6 +980,8 @@ def make_reservation(request):
         elif user_logged.user_type == 'gerant':
             parkings = Parking.objects.filter(actif=True, gerant__user=user_logged)
             matricules = []
+        parkings = Parking.objects.filter(actif=True)
+        matricules = Matricule.objects.filter(client=request.user)
 
         context = {
             'parkings': parkings,
@@ -973,6 +992,7 @@ def make_reservation(request):
     elif request.method == "POST":
         parking_id = request.POST.get('parking_id')
         matricule = request.POST.get('matricule_serie') + request.POST.get('matricule_numero')
+        matricule = request.POST.get('matricule_serie') + request.POST.get('matricule_numero')   
         date_arrive = request.POST.get('date_arrive')
         date_sortie = request.POST.get('date_sortie')
 

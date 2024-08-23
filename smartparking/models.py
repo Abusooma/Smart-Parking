@@ -142,6 +142,8 @@ class Reservation(models.Model):
     def calculate_price(self):
         if self.client and self.client.user_type == 'gerant' and self.parking.gerant and self.parking.gerant.user == self.client:
             return 0
+        if self.client.user_type == 'gerant':
+            return 0
         
         duration = (self.date_sortie - self.date_arrive).days + 1
         if duration <= 0:
