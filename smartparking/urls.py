@@ -29,8 +29,9 @@ urlpatterns = [
     path('reservations/<int:reservation_id>/details/', views.get_reservation_details, name='reservation_details'),
     path('reservations/<int:reservation_id>/update/', views.update_reservation, name='update_reservation'),
     path('reservations/<int:reservation_id>/delete/', views.delete_reservation, name='delete_reservation'),
-    # Add this to your urls.py
+    # UPDATE RESERVATION
     path('get_parkings/<int:region_id>/', views.get_parkings_by_region, name='get_parkings_by_region'),
+    path('get_parking_price/<int:parking_id>/', views.get_parking_price, name='get_parkings_price'),
     # Gestion des Régions
     path('regions/', views.region_list, name='regions'),
     path('get-regions/', views.get_regions, name='get_regions'),
@@ -46,7 +47,7 @@ urlpatterns = [
     path('delete_parking/', views.delete_parking, name='delete_parking'),
     path('search_parkings/', views.search_parkings, name='search_parkings'),
     # Dashboard Client
-    path('dashboard/type/user-client/', views.make_reservation, name='reserver'),
+    path('dashboard/user-client/', views.make_reservation, name='reserver'),
     path('dashboard/type/user-client/get-matricules/', views.get_matricules, name='get_matricules'),
 
     # Parametre

@@ -1,317 +1,490 @@
-{% extends 'dashboard/main.html' %}
+{% extends 'dashboard/main.html' %} 
 
-{% load static %}
+{% load static %} 
 
-{% block title %} Reserver {% endblock %}
+{% block title %} Reserver {% endblock %} 
 
 {% block content %}
 <div class="container-fluid dashboard-content">
-    <h2 class="mb-4">Liste des parkings</h2>
-    
-    <!-- Barre de recherche -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form id="searchForm">
-                <div class="form-row align-items-center">
-                    <div class="col-auto">
-                        <input type="text" class="form-control mb-2" id="searchInput" placeholder="Rechercher un parking...">
-                    </div>
-                    <div class="col-auto">
-                        <select class="form-control mb-2" id="regionFilter">
-                            <option value="">Toutes les régions</option>
-                            {% for parking in parkings %}
-                                <option value="{{ parking.region.nom }}">{{ parking.region.nom }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary mb-2">Rechercher</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
+  <h2 class="mb-4">Liste des parkings</h2>
 
-    <!-- Liste des parkings -->
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Nom du parking</th>
-                    <th>Région</th>
-                    <th>Places disponibles</th>
-                    <th>Tarif</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="parkingList">
-                {% for parking in parkings %}
-                <tr>
-                    <td>{{ parking.nom }}</td>
-                    <td>{{ parking.region.nom }}</td>
-                    <td>{{ parking.nombre_place_dispo }}</td>
-                    <td>{{ parking.tarif }} dinars/jour</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm reserve-btn" data-parking-id="{{ parking.id }}">
-                            Réserver
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <!-- Barre de recherche -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form id="searchForm">
+        <div class="form-row align-items-center">
+          <div class="col-auto">
+            <input
+              type="text"
+              class="form-control mb-2"
+              id="searchInput"
+              placeholder="Rechercher un parking..."
+            />
+          </div>
+          <div class="col-auto">
+            <select class="form-control mb-2" id="regionFilter">
+              <option value="">Toutes les régions</option>
+              {% for parking in parkings %}
+              <option value="{{ parking.region.nom }}">
+                {{ parking.region.nom }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-2">
+              Rechercher
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
+  </div>
+
+  <!-- Liste des parkings -->
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Nom du parking</th>
+          <th>Région</th>
+          <th>Places disponibles</th>
+          <th>Tarif</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="parkingList">
+        {% for parking in parkings %}
+        <tr>
+          <td>{{ parking.nom }}</td>
+          <td>{{ parking.region.nom }}</td>
+          <td>{{ parking.nombre_place_dispo }}</td>
+          <td>{{ parking.tarif }} dinars/jour</td>
+          <td>
+            <button
+              class="btn btn-primary btn-sm reserve-btn"
+              data-parking-id="{{ parking.id }}"
+            >
+              Réserver
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
-{% endblock %}
+{% endblock %} 
 
 {% block modals %}
 <!-- Modal de réservation -->
-<div class="modal fade" id="reservationModal" tabindex="-1" role="dialog" aria-labelledby="reservationModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="reservationModalLabel">Réserver un parking</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<div
+  class="modal fade"
+  id="reservationModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="reservationModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reservationModalLabel">
+          Réserver un parking
+        </h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="reservationForm">
+          {% csrf_token %}
+          <input type="hidden" id="parkingId" name="parking_id" />
+          <div class="form-group">
+            <label for="parkingName">Parking</label>
+            <input type="text" class="form-control" id="parkingName" readonly />
+          </div>
+          <div class="form-group">
+            <label for="matricule">Matricule du véhicule</label>
+            <div class="form-row">
+              <div class="col-4">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="matriculeSerie"
+                  name="matricule_serie"
+                  required
+                  maxlength="3"
+                  placeholder="Série"
+                  list="matriculeSerieList"
+                />
+                <datalist id="matriculeSerieList">
+                  {% for serie in series_matricule %}
+                  <option value="{{ serie }}">{% endfor %}</option>
+                </datalist>
+              </div>
+              <div class="col-4">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="matriculeTunis"
+                  name="matricule_tunis"
+                  required
+                  value="توانس"
+                  readonly
+                />
+              </div>
+              <div class="col-4">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="matriculeNumero"
+                  name="matricule_numero"
+                  required
+                  maxlength="4"
+                  placeholder="Numéro"
+                />
+              </div>
             </div>
-            <div class="modal-body">
-                <form id="reservationForm">
-                    {% csrf_token %}
-                    <input type="hidden" id="parkingId" name="parking_id">
-                    <div class="form-group">
-                        <label for="parkingName">Parking</label>
-                        <input type="text" class="form-control" id="parkingName" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="matricule">Matricule du véhicule</label>
-                        <input type="text" class="form-control" id="matricule" name="matricule" required list="matriculeList">
-                        <datalist id="matriculeList">
-                            {% for matricule in matricules %}
-                                <option value="{{ matricule.matricule }}">
-                            {% endfor %}
-                        </datalist>
-                    </div>
-                    <div class="form-group">
-                        <label for="dateArrivee">Date d'arrivée</label>
-                        <input type="date" class="form-control" id="dateArrivee" name="date_arrive" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="dateSortie">Date de sortie</label>
-                        <input type="date" class="form-control" id="dateSortie" name="date_sortie" required>
-                    </div>
-                </form>
-                <div id="reservationSummary" class="mt-3" style="display: none;">
-                    <h6>Résumé de la réservation :</h6>
-                    <p id="reservationDetails"></p>
-                    <p>Prix total : <span id="totalPrice"></span>Dinars</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="confirmReservation">Confirmer la réservation</button>
-            </div>
+          </div>
+          <div class="form-group">
+            <label for="dateArrivee">Date d'arrivée</label>
+            <input
+              type="date"
+              class="form-control"
+              id="dateArrivee"
+              name="date_arrive"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="dateSortie">Date de sortie</label>
+            <input
+              type="date"
+              class="form-control"
+              id="dateSortie"
+              name="date_sortie"
+              required
+            />
+          </div>
+        </form>
+        <div id="reservationSummary" class="mt-3" style="display: none">
+          <h6>Résumé de la réservation :</h6>
+          <p id="reservationDetails"></p>
+          <p>Prix total : <span id="totalPrice"></span>Dinars</p>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Annuler
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmReservation">
+          Confirmer la réservation
+        </button>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- modal pour le paiement -->
-<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="paymentModalLabel">Paiement</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<div
+  class="modal fade"
+  id="paymentModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="paymentModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="paymentModalLabel">Paiement</h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="paymentForm">
+          <div class="form-group">
+            <label for="cardNumber">Numéro de carte</label>
+            <input type="text" class="form-control" id="cardNumber" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label for="expirationDate">Date d'expiration</label>
+              <input
+                type="text"
+                class="form-control"
+                id="expirationDate"
+                placeholder="MM/AA"
+                required
+              />
             </div>
-            <div class="modal-body">
-                <form id="paymentForm">
-                    <div class="form-group">
-                        <label for="cardNumber">Numéro de carte</label>
-                        <input type="text" class="form-control" id="cardNumber" required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label for="expirationDate">Date d'expiration</label>
-                            <input type="text" class="form-control" id="expirationDate" placeholder="MM/AA" required>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label for="cvv">CVV</label>
-                            <input type="text" class="form-control" id="cvv" required>
-                        </div>
-                    </div>
-                </form>
+            <div class="form-group col-md-6">
+              <label for="cvv">CVV</label>
+              <input type="text" class="form-control" id="cvv" required />
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="confirmPayment">Valider le paiement</button>
-            </div>
-        </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+          Annuler
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmPayment">
+          Valider le paiement
+        </button>
+      </div>
     </div>
+  </div>
 </div>
-
 
 <!-- Modal de confirmation -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmationModalLabel">Réservation confirmée</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Votre réservation a été effectuée avec succès.</p>
-                <p>Code d'accès : <strong id="accessCode"></strong></p>
-                <p>Prix total : <strong id="confirmationTotalPrice"></strong> Dinars</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Fermer</button>
-            </div>
-        </div>
+<div
+  class="modal fade"
+  id="confirmationModal"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="confirmationModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmationModalLabel">
+          Réservation confirmée
+        </h5>
+        <button
+          type="button"
+          class="close"
+          data-dismiss="modal"
+          aria-label="Close"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Votre réservation a été effectuée avec succès.</p>
+        <p>Code d'accès : <strong id="accessCode"></strong></p>
+        <p>Prix total : <strong id="confirmationTotalPrice"></strong> Dinars</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">
+          Fermer
+        </button>
+      </div>
     </div>
+  </div>
 </div>
-{% endblock %}
+{% endblock %} 
 
 {% block extra_script %}
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-   $(document).ready(function () {
-    // Gestion de la recherche
-    $('#searchForm').submit(function(e) {
-        e.preventDefault();
-        const searchTerm = $('#searchInput').val();
-        const selectedRegion = $('#regionFilter').val();
+    $(document).ready(function () {
+  // Gestion de la recherche
+  $("#searchForm").submit(function (e) {
+    e.preventDefault();
+    const searchTerm = $("#searchInput").val();
+    const selectedRegion = $("#regionFilter").val();
 
-        axios.get('{% url "search_parkings" %}', {
-            params: {
-                query: searchTerm,
-                region: selectedRegion
-            }
+    axios
+      .get('{% url "search_parkings" %}', {
+        params: {
+          query: searchTerm,
+          region: selectedRegion,
+        },
+      })
+      .then(function (response) {
+        displayParkings(response.data);
+      })
+      .catch(function (error) {
+        console.error("Error:", error);
+      });
+  });
+
+  // Fonction pour afficher les parkings
+  function displayParkings(parkings) {
+    const parkingList = $("#parkingList");
+    parkingList.empty();
+
+    parkings.forEach((parking) => {
+      parkingList.append(`
+        <tr>
+          <td>${parking.nom}</td>
+          <td>${parking.region}</td>
+          <td>${parking.placesDisponibles}</td>
+          <td>${parking.tarif.toFixed(2)} Dinars/jour</td>
+          <td>
+            <button class="btn btn-primary btn-sm reserve-btn" data-parking-id="${parking.id}">
+              Réserver
+            </button>
+          </td>
+        </tr>
+      `);
+    });
+  }
+
+  // Gestion de l'ouverture du modal de réservation
+  $(document).on("click", ".reserve-btn", function () {
+    const parkingId = $(this).data("parking-id");
+    const parkingName = $(this).closest("tr").find("td:first").text();
+    $("#parkingId").val(parkingId);
+    $("#parkingName").val(parkingName);
+    $("#reservationModal").modal("show");
+  });
+
+  // Fonction pour mettre à jour le résumé de la réservation
+  function updateReservationSummary() {
+    const parkingName = $("#parkingName").val();
+    const matriculeSerie = $("#matriculeSerie").val();
+    const matriculeTunis = $("#matriculeTunis").val();
+    const matriculeNumero = $("#matriculeNumero").val();
+    const dateArrivee = $("#dateArrivee").val();
+    const dateSortie = $("#dateSortie").val();
+
+    if (parkingName && matriculeSerie && matriculeNumero && dateArrivee && dateSortie) {
+      const summaryText = `Parking: ${parkingName}<br>
+                           Matricule: ${matriculeSerie} ${matriculeTunis} ${matriculeNumero}<br>
+                           Arrivée: ${new Date(dateArrivee).toLocaleDateString()}<br>
+                           Départ: ${new Date(dateSortie).toLocaleDateString()}`;
+      $("#reservationDetails").html(summaryText);
+      $("#reservationSummary").show();
+
+      // Calcul du prix
+      axios
+        .get('{% url "calculate-price" %}', {
+          params: {
+            parking_id: $("#parkingId").val(),
+            date_arrive: dateArrivee,
+            date_sortie: dateSortie,
+          },
         })
         .then(function (response) {
-            displayParkings(response.data);
+          $("#totalPrice").text(response.data.price.toFixed(2));
         })
         .catch(function (error) {
-            console.error('Error:', error);
+          console.error("Error calculating price:", error);
         });
-    });
-
-    // Fonction pour afficher les parkings
-    function displayParkings(parkings) {
-        const parkingList = $('#parkingList');
-        parkingList.empty();
-
-        parkings.forEach(parking => {
-            parkingList.append(`
-                <tr>
-                    <td>${parking.nom}</td>
-                    <td>${parking.region}</td>
-                    <td>${parking.placesDisponibles}</td>
-                    <td>${parking.tarif.toFixed(2)} €/jour</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm reserve-btn" data-parking-id="${parking.id}">
-                            Réserver
-                        </button>
-                    </td>
-                </tr>
-            `);
-        });
+    } else {
+      $("#reservationSummary").hide();
     }
+  }
 
-    // Gestion de l'ouverture du modal de réservation
-    $(document).on('click', '.reserve-btn', function() {
-        const parkingId = $(this).data('parking-id');
-        const parkingName = $(this).closest('tr').find('td:first').text();
-        $('#parkingId').val(parkingId);
-        $('#parkingName').val(parkingName);
-        $('#reservationModal').modal('show');
-    });
+  // Mise à jour du résumé lors de la saisie
+  $("#reservationForm input").on("input", updateReservationSummary);
 
-    // Fonction pour mettre à jour le résumé de la réservation
-    function updateReservationSummary() {
-        const parkingName = $('#parkingName').val();
-        const matricule = $('#matricule').val();
-        const dateArrivee = $('#dateArrivee').val();
-        const dateSortie = $('#dateSortie').val();
+  // Modification du comportement du bouton "Confirmer la réservation"
+  $("#confirmReservation").click(function () {
+    $("#reservationModal").modal("hide");
+    $("#paymentModal").modal("show");
+  });
 
-        if (parkingName && matricule && dateArrivee && dateSortie) {
-            const summaryText = `Parking: ${parkingName}<br>
-                                Matricule: ${matricule}<br>
-                                Arrivée: ${new Date(dateArrivee).toLocaleDateString()}<br>
-                                Départ: ${new Date(dateSortie).toLocaleDateString()}`;
-            $('#reservationDetails').html(summaryText);
-            $('#reservationSummary').show();
+  // Gestion de la validation du paiement
+  $("#confirmPayment").click(function () {
+    // Validation basique des champs de paiement
+    if (
+      $("#cardNumber").val() &&
+      $("#expirationDate").val() &&
+      $("#cvv").val()
+    ) {
+      $("#paymentModal").modal("hide");
 
-            // Calcul du prix
-            axios.get('{% url "calculate-price" %}', {
-                params: {
-                    parking_id: $('#parkingId').val(),
-                    date_arrive: dateArrivee,
-                    date_sortie: dateSortie
-                }
-            })
-            .then(function (response) {
-                $('#totalPrice').text(response.data.price.toFixed(2));
-            })
-            .catch(function (error) {
-                console.error('Error calculating price:', error);
-            });
-        } else {
-            $('#reservationSummary').hide();
-        }
-    }
+      // Simulation de l'appel au backend pour la réservation
+      const formData = new FormData($("#reservationForm")[0]);
 
-    // Mise à jour du résumé lors de la saisie
-    $('#reservationForm input').on('input', updateReservationSummary);
-
-    // Modification du comportement du bouton "Confirmer la réservation"
-    $('#confirmReservation').click(function() {
-        $('#reservationModal').modal('hide');
-        $('#paymentModal').modal('show');
-    });
-
-    // Gestion de la validation du paiement
-    $('#confirmPayment').click(function() {
-        // Validation basique des champs de paiement
-        if ($('#cardNumber').val() && $('#expirationDate').val() && $('#cvv').val()) {
-            $('#paymentModal').modal('hide');
-            
-            // Simulation de l'appel au backend pour la réservation
-            const formData = new FormData($('#reservationForm')[0]);
-
-            axios.post('{% url "reserver" %}', formData)
-                .then(function (response) {
-                    if (response.data.status === 'success') {
-                        $('#accessCode').text(response.data.access_code);
-                        $('#confirmationTotalPrice').text(response.data.total_price.toFixed(2));
-                        $('#confirmationModal').modal('show');
-                    } else {
-                        alert(response.data.message);
-                    }
-                })
-                .catch(function (error) {
-                    console.error('Error:', error);
-                    alert('Une erreur est survenue lors de la réservation.');
-                });
-        } else {
-            alert('Veuillez remplir tous les champs de paiement.');
-        }
-    });
-
-    // Chargement des matricules pour l'autocomplétion
-    axios.get('{% url "get_matricules" %}')
+      axios
+        .post('{% url "reserver" %}', formData)
         .then(function (response) {
-            const matriculeList = $('#matriculeList');
-            response.data.forEach(matricule => {
-                matriculeList.append(`<option value="${matricule}">`);
-            });
+          if (response.data.status === "success") {
+            $("#accessCode").text(response.data.access_code);
+            $("#confirmationTotalPrice").text(
+              response.data.total_price.toFixed(2)
+            );
+            $("#confirmationModal").modal("show");
+          } else {
+            alert(response.data.message);
+          }
         })
         .catch(function (error) {
-            console.error('Error loading matricules:', error);
+          console.error("Error:", error);
+          alert("Une erreur est survenue lors de la réservation.");
         });
+    } else {
+      alert("Veuillez remplir tous les champs de paiement.");
+    }
+  });
+
+  // Chargement des matricules pour l'autocomplétion
+  axios
+    .get('{% url "get_matricules" %}')
+    .then(function (response) {
+      const matriculeSerieList = $("#matriculeSerieList");
+      response.data.forEach((matricule) => {
+        matriculeSerieList.append(`<option value="${matricule}">`);
+      });
+    })
+    .catch(function (error) {
+      console.error("Error loading matricules:", error);
+    });
+
+  // Gestion des dates
+  var $dateArriveeInput = $('#dateArrivee');
+  var $dateSortieInput = $('#dateSortie');
+
+  // Fonction pour formater la date au format YYYY-MM-DD
+  function formatDate(date) {
+    var d = new Date(date),
+        month = '' + (d.getMonth() + 1),
+        day = '' + d.getDate(),
+        year = d.getFullYear();
+
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+
+    return [year, month, day].join('-');
+  }
+
+  // Initialisation : désactiver le champ de date de sortie
+  $dateSortieInput.prop('disabled', true);
+
+  // Configurer la date minimale pour la date d'arrivée (aujourd'hui)
+  var today = new Date();
+  $dateArriveeInput.attr('min', formatDate(today));
+
+  // Gérer le changement de la date d'arrivée
+  $dateArriveeInput.on('change', function() {
+    var selectedArriveDate = new Date($(this).val());
+    
+    // Activer le champ de date de sortie
+    $dateSortieInput.prop('disabled', false);
+    
+    // Configurer la date minimale pour la date de sortie (même jour que la date d'arrivée)
+    $dateSortieInput.attr('min', formatDate(selectedArriveDate));
+    
+    // Réinitialiser la date de sortie si elle est antérieure à la nouvelle date minimale
+    var currentDepartureDate = new Date($dateSortieInput.val());
+    if (currentDepartureDate < selectedArriveDate) {
+        $dateSortieInput.val('');
+    }
+
+    updateReservationSummary();
+  });
+
+  // Gérer le changement de la date de sortie
+  $dateSortieInput.on('change', updateReservationSummary);
 });
 </script>
 {% endblock %}

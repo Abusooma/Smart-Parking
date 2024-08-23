@@ -8,6 +8,9 @@
 <div class="container-fluid dashboard-content">
     <h2 class="mb-4">Gestion des Réservations</h2>
 
+    <!-- Container pour les alertes -->
+    <div id="alertContainer"></div>
+
     <!-- Filtres de recherche -->
     <div class="card mb-4">
         <div class="card-body">
@@ -52,54 +55,54 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">Liste des réservations</h5>
-    <table class="table table-striped table-responsive {% if request.user.user_type == 'client' %}text-center{% endif %}">
-    <thead>
-        <tr>
-            {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
-            <th style="width: 5%;">ID</th>
-            <th style="width: 20%;">Client</th>
+            <table class="table table-striped table-responsive {% if request.user.user_type == 'client' %}text-center{% endif %}">
+                <thead>
+                    <tr>
+                        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
+                        <th style="width: 5%;">ID</th>
+                        <th style="width: 20%;">Client</th>
+                        {% endif %}
+                        <th style="width: 15%;">Parking</th>
+                        <th style="width: 15%;">Date début</th>
+                        <th style="width: 15%;">Date fin</th>
+                        <th style="width: 10%;">Statut</th>
+                        <th style="width: 15%;">Code d'accès</th>
+                        <th style="width: 10%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    {% for reservation in reservations %}
+    <tr data-id="{{ reservation.id }}">
+        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
+        <td>{{ reservation.id }}</td>
+        <td class="text-truncate" style="max-width: 150px;">{{ reservation.client }}</td>
+        {% endif %}
+        <td class="text-truncate parking" style="max-width: 100px;">{{ reservation.parking }}</td>
+        <td class="date-arrive">{{ reservation.date_arrive|date:"Y-m-d H:i" }}</td>
+        <td class="date-sortie">{{ reservation.date_sortie|date:"Y-m-d H:i" }}</td>
+        <td>
+            <span class="badge badge-{{ reservation.status|yesno:'success,warning,danger' }} statut">
+                {{ reservation.get_status_display }}
+            </span>
+        </td>
+        <td class="text-truncate access-code" style="max-width: 100px;">{{ reservation.access_code }}</td>
+        <td style="max-width: 300px; display: flex;">
+            <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
+                <i class="fas fa-eye"></i>
+            </button>
+            {% if reservation.status != 'expired' %}
+            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                <i class="fas fa-trash"></i>
+            </button>
             {% endif %}
-            <th style="width: 15%;">Parking</th>
-            <th style="width: 15%;">Date début</th>
-            <th style="width: 15%;">Date fin</th>
-            <th style="width: 10%;">Statut</th>
-            <th style="width: 15%;">Code d'accès</th>
-            <th style="width: 10%;">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for reservation in reservations %}
-        <tr>
-            {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
-            <td>{{ reservation.id }}</td>
-            <td class="text-truncate" style="max-width: 150px;">{{ reservation.client }}</td>
-            {% endif %}
-            <td class="text-truncate" style="max-width: 100px;">{{ reservation.parking }}</td>
-            <td>{{ reservation.date_arrive|date:"Y-m-d" }}</td>
-            <td>{{ reservation.date_sortie|date:"Y-m-d" }}</td>
-            <td>
-                <span class="badge badge-{{ reservation.is_expired|yesno:'success,warning' }}">
-                    {{ reservation.is_expired|yesno:'Confirmé,En cours' }}
-                </span>
-            </td>
-            <td class="text-truncate" style="max-width: 100px;">{{ reservation.access_code }}</td>
-            <td style="max-width: 300px; display: flex;">
-                <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
-                    <i class="fas fa-eye"></i>
-                </button>
-                {% if request.user.user_type == 'client' %}
-                <button class="btn btn-sm btn-warning mr-1">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-danger">
-                    <i class="fas fa-trash"></i>
-                </button>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+            </table>
 
             <!-- Pagination -->
             {% if is_paginated %}
@@ -166,251 +169,312 @@
 </div>
 
 <!-- Modifier la réservation Modal -->
-        <div class="modal fade" id="modifierReservationModal" tabindex="-1" role="dialog" aria-labelledby="modifierReservationModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modifierReservationModalLabel">Modifier la réservation</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="modifierReservationForm">
-                            <input type="hidden" id="reservationId" name="reservationId">
-                            <div class="form-group">
-                                <label for="region">Région</label>
-                                <select class="form-control" id="region" name="region" required>
-                                    <!-- Options will be populated dynamically -->
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="parking">Parking</label>
-                                <select class="form-control" id="parking" name="parking" required>
-                                    <!-- Options will be populated dynamically -->
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="date_arrive">Date d'arrivée</label>
-                                <input type="datetime-local" class="form-control" id="date_arrive" name="date_arrive" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="date_sortie">Date de sortie</label>
-                                <input type="datetime-local" class="form-control" id="date_sortie" name="date_sortie" required>
-                            </div>
-                            <div class="form-group">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="annuler" name="annuler">
-                                    <label class="form-check-label" for="annuler">
-                                        Annuler la réservation
-                                    </label>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                        <button type="button" class="btn btn-primary" id="confirmerModificationBtn">Enregistrer les modifications</button>
-                    </div>
-                </div>
+<div class="modal fade" id="modifierReservationModal" tabindex="-1" role="dialog" aria-labelledby="modifierReservationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modifierReservationModalLabel">Modifier la réservation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-        </div>
-
-<!-- Supprimer la réservation Modal -->
-        <div class="modal fade" id="supprimerReservationModal" tabindex="-1" role="dialog" aria-labelledby="supprimerReservationModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="supprimerReservationModalLabel">Confirmer la suppression</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+            <div class="modal-body">
+                <form id="modifierReservationForm">
+                    <input type="hidden" id="reservationId" name="reservationId">
+                    <div class="form-group">
+                        <label for="region">Région</label>
+                        <select class="form-control" id="region" name="region" required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
                     </div>
-                    <div class="modal-body">
-                        <p>Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
+                    <div class="form-group">
+                        <label for="parking">Parking</label>
+                        <select class="form-control" id="parking" name="parking" required>
+                            <!-- Options will be populated dynamically -->
+                        </select>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                        <button type="button" class="btn btn-danger" id="confirmerSuppressionBtn">Confirmer la suppression</button>
+                    <div class="form-group">
+                        <label for="date_arrive">Date d'arrivée</label>
+                        <input type="date" class="form-control" id="date_arrive" name="date_arrive" required>
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label for="date_sortie">Date de sortie</label>
+                        <input type="date" class="form-control" id="date_sortie" name="date_sortie" required>
+                    </div>
+                    <div class="form-group">
+            <label for="id_matricule">Matricule de la voiture</label>
+            <div class="custom-select-wrapper d-flex">
+              <input type="text" class="form-control me-2" id="id_matricule_serie" name="matricule_serie" placeholder="Série" maxlength="3" required {% if is_client %}autocomplete="off"{% endif %}>
+              <div class="custom-select-wrapper flex-grow-1">
+                <input type="text" class="form-control" id="id_matricule_ville" name="matricule_ville" placeholder="توانس" readonly>
+              </div>
+              <input type="text" class="form-control ms-2" id="id_matricule_numero" name="matricule_numero" placeholder="Numéro" maxlength="4" required {% if is_client %}autocomplete="off"{% endif %}>
+            </div>
+            {% if is_client and user_matricules %}
+              <ul class="custom-select" id="matricule-list">
+                {% for matricule in user_matricules %}
+                  <li data-serie="{{ matricule.matricule_serie }}" data-ville="{{ matricule.matricule_ville }}" data-numero="{{ matricule.matricule_numero }}">{{ matricule.matricule_serie }} توانس {{ matricule.matricule_numero }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="annuler" name="annuler">
+                            <label class="form-check-label" for="annuler">
+                                Annuler la réservation
+                            </label>
+                        </div>
+                    </div>
+                    <div id="estimated_price" class="mt-3"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirmerModificationBtn">Enregistrer les modifications</button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Supprimer la réservation Modal -->
+<div class="modal fade" id="supprimerReservationModal" tabindex="-1" role="dialog" aria-labelledby="supprimerReservationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="supprimerReservationModalLabel">Confirmer la suppression</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer cette réservation ?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmerSuppressionBtn">Confirmer la suppression</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_script %}
 <script>
-    $(document).ready(function () {
-        // Afficher les détails de la réservation
-        $('.view-reservation').on('click', function () {
-            const reservationId = $(this).data('id');
+$(document).ready(function () {
+    // Afficher les détails de la réservation
+    $('.view-reservation').on('click', function () {
+        const reservationId = $(this).data('id');
+        $.ajax({
+            url: `/reservations/${reservationId}/details/`,
+            method: 'GET',
+            success: function (data) {
+                const modalBody = $('#detailReservationModal .modal-body');
+                modalBody.html(`
+                    <p><strong>ID de réservation :</strong> ${data.id}</p>
+                    <p><strong>Client :</strong> ${data.client}</p>
+                    <p><strong>Parking :</strong> ${data.parking}</p>
+                    <p><strong>Date de début :</strong> ${data.date_arrive.split(' ')[0]}</p>
+                    <p><strong>Date de fin :</strong> ${data.date_sortie.split(' ')[0]}</p>
+                    <p><strong>Statut :</strong> ${data.statut}</p>
+                    <p><strong>Code d'accès :</strong> ${data.access_code}</p>
+                    <p><strong>Matricule :</strong> ${data.matricule}</p>
+                `);
+                $('#detailReservationModal').modal('show');
+            },
+            error: function () {
+                showAlert('Une erreur est survenue lors du chargement des détails de la réservation.', 'danger');
+            }
+        });
+    });
+
+    // Modifier une réservation
+    $('.modify-reservation').on('click', function () {
+        const reservationId = $(this).data('id');
+        const isExpired = $(this).data('expired') === 'expired';
+
+        if (isExpired) {
+            showAlert("Vous ne pouvez pas modifier une réservation expirée.", 'warning');
+            return;
+        }
+
+        // Fetch reservation details and populate the form
+        $.ajax({
+            url: `/reservations/${reservationId}/details/`,
+            method: 'GET',
+            success: function (data) {
+                $('#reservationId').val(data.id);
+                $('#date_arrive').val(data.date_arrive.split(' ')[0]);
+                $('#date_sortie').val(data.date_sortie.split(' ')[0]);
+                $('#annuler').prop('checked', data.statut === 'cancel');
+
+                // Set minimum date for date inputs
+                const today = new Date().toISOString().split('T')[0];
+                $('#date_arrive, #date_sortie').attr('min', today);
+
+                // Populate regions dropdown
+                populateRegionsDropdown(data.region_id, data.parking_id);
+
+                // Split matricule
+                const matricule = data.matricule || '';
+                const [serie = '', numero = ''] = (matricule.split('تونس').length > 1) ? matricule.split('تونس') : ['', ''];
+                $('#id_matricule_serie').val(serie.trim());
+                $('#id_matricule_numero').val(numero.trim());
+
+                $('#modifierReservationModal').modal('show');
+            },
+            error: function (xhr, status, error) {
+                showAlert('Une erreur est survenue lors du chargement des détails de la réservation: ' + error, 'danger');
+            }
+        });
+    });
+
+    // Populate regions dropdown
+    function populateRegionsDropdown(selectedRegionId, selectedParkingId) {
+        $.ajax({
+            url: '/get-regions/',
+            method: 'GET',
+            success: function (regionData) {
+                const regionSelect = $('#region');
+                regionSelect.empty();
+                regionData.regions.forEach(function (region) {
+                    regionSelect.append($('<option>', {
+                        value: region.id,
+                        text: region.nom
+                    }));
+                });
+                if (selectedRegionId) {
+                    regionSelect.val(selectedRegionId);
+                    // Populate parkings dropdown based on selected region
+                    updateParkingDropdown(selectedRegionId, selectedParkingId);
+                } else {
+                    showAlert('Aucune région sélectionnée pour cette réservation.', 'warning');
+                }
+            },
+            error: function (xhr, status, error) {
+                showAlert('Erreur lors de la récupération des régions: ' + error, 'danger');
+            }
+        });
+    }
+
+    function updateParkingDropdown(regionId, selectedParkingId = null) {
+    if (!regionId) {
+        showAlert('Aucune région sélectionnée.', 'warning');
+        return;
+    }
+    console.log(`Fetching parkings for region ${regionId}`);
+    $.ajax({
+        url: `/get_parkings/${regionId}/`,
+        method: 'GET',
+        success: function (parkingData) {
+            console.log('Received parking data:', parkingData);
+            const parkingSelect = $('#parking');
+            parkingSelect.empty();
+            if (parkingData.parkings && parkingData.parkings.length > 0) {
+                parkingData.parkings.forEach(function (parking) {
+                    parkingSelect.append($('<option>', {
+                        value: parking.id,
+                        text: parking.nom
+                    }));
+                });
+                if (selectedParkingId) {
+                    parkingSelect.val(selectedParkingId);
+                }
+                updatePrice();
+                console.log('Parkings loaded successfully');
+            } else {
+                showAlert('Aucun parking trouvé pour cette région.', 'warning');
+                console.log('No parkings found for this region');
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error fetching parkings:', status, error);
+            console.log('XHR response:', xhr.responseText);
+            showAlert('Erreur lors de la récupération des parkings: ' + error, 'danger');
+        }
+    });
+}
+
+    // Update price when dates change
+    $('#date_arrive, #date_sortie, #parking').on('change', updatePrice);
+
+    function updatePrice() {
+        const parkingId = $('#parking').val();
+        const dateArrive = new Date($('#date_arrive').val());
+        const dateSortie = new Date($('#date_sortie').val());
+
+        if (parkingId && dateArrive && dateSortie && dateArrive <= dateSortie) {
+            const duration = Math.ceil((dateSortie - dateArrive) / (1000 * 60 * 60 * 24));
+            
             $.ajax({
-                url: `/reservations/${reservationId}/details/`,
+                url: `/get_parking_price/${parkingId}/`,
                 method: 'GET',
                 success: function (data) {
-                    const modalBody = $('#detailReservationModal .modal-body');
-                    modalBody.html(`
-                        {% if not request.user.user_type == 'client' %}
-                        <p><strong>ID de réservation :</strong> ${data.id}</p>
-                        <p><strong>Client :</strong> ${data.client}</p>
-                        {% endif %}
-                        <p><strong>Parking :</strong> ${data.parking}</p>
-                        <p><strong>Date de début :</strong> ${data.date_arrive}</p>
-                        <p><strong>Date de fin :</strong> ${data.date_sortie}</p>
-                        <p><strong>Statut :</strong> ${data.statut}</p>
-                        <p><strong>Code d'accès :</strong> ${data.access_code}</p>
-                    `);
-                    $('#detailReservationModal').modal('show');
-                },
-                error: function () {
-                    alert('Une erreur est survenue lors du chargement des détails de la réservation.');
+                    const price = data.tarif * duration;
+                    $('#estimated_price').text(`Prix estimé: ${price.toFixed(2)} TND`);
                 }
             });
-        });
-    
-        // Modify reservation
-            $('.modify-reservation').on('click', function () {
-                const reservationId = $(this).data('id');
-                const isExpired = $(this).data('expired');
+        } else {
+            $('#estimated_price').text('');
+        }
+    }
 
-                if (isExpired) {
-                    alert("Vous ne pouvez pas modifier une réservation expirée.");
-                    return;
-                }});
-    
-        // Fetch reservation details and populate the form
-                $.ajax({
-                    url: `/reservations/${reservationId}/details/`,
-                    method: 'GET',
-                    success: function (data) {
-                        $('#reservationId').val(data.id);
-                        $('#parking').val(data.parking_id);
-                        $('#date_arrive').val(data.date_arrive);
-                        $('#date_sortie').val(data.date_sortie);
-                        $('#annuler').prop('checked', data.statut === 'Annulé');
+    // Ensure date_sortie is not before date_arrive
+    $('#date_arrive').on('change', function() {
+        $('#date_sortie').attr('min', $(this).val());
+    });
 
-                        // Populate regions dropdown
-                        $.ajax({
-                            url: '/get_regions/',
-                            method: 'GET',
-                            success: function (regionData) {
-                                const regionSelect = $('#region');
-                                regionSelect.empty();
-                                regionData.regions.forEach(function (region) {
-                                    regionSelect.append($('<option>', {
-                                        value: region.id,
-                                        text: region.nom
-                                    }));
-                                });
-                                regionSelect.val(data.region_id);
-                                
-                                // Populate parkings dropdown based on selected region
-                                updateParkingDropdown(data.region_id, data.parking_id);
-                            }
-                        });
+    // Submit modification
+    $('#confirmerModificationBtn').on('click', function () {
+        const formData = new FormData($('#modifierReservationForm')[0]);
+        const reservationId = $('#reservationId').val();
 
-                        $('#modifierReservationModal').modal('show');
-                    },
-                    error: function () {
-                        alert('Une erreur est survenue lors du chargement des détails de la réservation.');
-                    }
-                });
+        // Combine matricule parts
+        const matriculeSerie = $('#id_matricule_serie').val();
+        const matriculeNumero = $('#id_matricule_numero').val();
+        formData.set('matricule', `${matriculeSerie}تونس${matriculeNumero}`);
 
-            // Update parking dropdown when region changes
-            $('#region').on('change', function () {
-                updateParkingDropdown($(this).val());
-            });
-
-            function updateParkingDropdown(regionId, selectedParkingId = null) {
-                $.ajax({
-                    url: `/get_parkings/${regionId}/`,
-                    method: 'GET',
-                    success: function (parkingData) {
-                        const parkingSelect = $('#parking');
-                        parkingSelect.empty();
-                        parkingData.parkings.forEach(function (parking) {
-                            parkingSelect.append($('<option>', {
-                                value: parking.id,
-                                text: parking.nom
-                            }));
-                        });
-                        if (selectedParkingId) {
-                            parkingSelect.val(selectedParkingId);
-                        }
-                    }
-                });
+        $.ajax({
+            url: `/reservations/${reservationId}/update/`,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.success) {
+                    updateReservationInTable(data.reservation);
+                    $('#modifierReservationModal').modal('hide');
+                    showAlert('La réservation a été mise à jour avec succès.', 'success');
+                } else {
+                    showAlert(data.message || 'Une erreur est survenue lors de la mise à jour de la réservation.', 'danger');
+                }
+            },
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors de la mise à jour de la réservation.', 'danger');
             }
-
-            // Submit modification
-            $('#confirmerModificationBtn').on('click', function () {
-                const formData = $('#modifierReservationForm').serialize();
-                const reservationId = $('#reservationId').val();
-
-                $.ajax({
-                    url: `/reservations/${reservationId}/update/`,
-                    method: 'POST',
-                    data: formData,
-                    success: function (data) {
-                        if (data.success) {
-                            // Update the reservation in the table
-                            updateReservationInTable(data.reservation);
-                            $('#modifierReservationModal').modal('hide');
-                        } else {
-                            alert('Une erreur est survenue lors de la mise à jour de la réservation.');
-                        }
-                    },
-                    error: function () {
-                        alert('Une erreur est survenue lors de la mise à jour de la réservation.');
-                    }
-                });
-            });
-
-            // Delete reservation
-            $('.delete-reservation').on('click', function () {
-                const reservationId = $(this).data('id');
-                const isExpired = $(this).data('expired');
-
-                if (isExpired) {
-                    alert("Vous ne pouvez pas supprimer une réservation expirée.");
-                    return;
-                }
-
-                $('#supprimerReservationModal').modal('show');
-                $('#confirmerSuppressionBtn').data('id', reservationId);
-            });
-
-            $('#confirmerSuppressionBtn').on('click', function () {
-                const reservationId = $(this).data('id');
-
-                $.ajax({
-                    url: `/reservations/${reservationId}/delete/`,
-                    method: 'POST',
-                    success: function (data) {
-                        if (data.success) {
-                            // Remove the reservation from the table
-                            $(`tr[data-id="${reservationId}"]`).remove();
-                            $('#supprimerReservationModal').modal('hide');
-                        } else {
-                            alert('Une erreur est survenue lors de la suppression de la réservation.');
-                        }
-                    },
-                    error: function () {
-                        alert('Une erreur est survenue lors de la suppression de la réservation.');
-                    }
-                });
-            });
-
-            function updateReservationInTable(reservation) {
-                const row = $(`tr[data-id="${reservation.id}"]`);
-                row.find('.parking').text(reservation.parking);
-                row.find('.date-arrive').text(reservation.date_arrive);
-                row.find('.date-sortie').text(reservation.date_sortie);
-                row.find('.statut').text(reservation.statut);
-                row.find('.access-code').text(reservation.access_code);
-            };        
-                
-
         });
+    });
+
+    function updateReservationInTable(reservation) {
+        const row = $(`tr[data-id="${reservation.id}"]`);
+        row.find('.parking').text(reservation.parking);
+        row.find('.date-arrive').text(reservation.date_arrive.split(' ')[0]);
+        row.find('.date-sortie').text(reservation.date_sortie.split(' ')[0]);
+        row.find('.statut').text(reservation.statut);
+        row.find('.access-code').text(reservation.access_code);
+    }
+
+    function showAlert(message, type) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        `;
+        $('#alertContainer').html(alertHtml);
+    }
+});
 </script>
 {% endblock %}

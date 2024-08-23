@@ -117,10 +117,9 @@ class Reservation(models.Model):
         if self.date_sortie < timezone.now() + timedelta(hours=24):
             self.status = 'expired'
 
-    def generate_access_code(self, lenth_digit=4, length_char=2):
+    def generate_access_code(self, lenth_digit=4):
         digits = random.choices(string.digits, k=lenth_digit) 
-        chars = random.choices(string.ascii_uppercase, k=length_char)
-        code = digits + chars
+        code = digits
         random.shuffle(code)
         return ''.join(code)
 

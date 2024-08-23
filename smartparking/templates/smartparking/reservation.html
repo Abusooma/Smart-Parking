@@ -21,16 +21,20 @@
           </div>
           <div class="form-group">
             <label for="id_matricule">Matricule de la voiture</label>
-            <div class="custom-select-wrapper">
-              <input type="text" class="form-control" id="id_matricule" name="matricule" required {% if is_client %}autocomplete="off"{% endif %}>
-              {% if is_client and user_matricules %}
-                <ul class="custom-select" id="matricule-list">
-                  {% for matricule in user_matricules %}
-                    <li data-value="{{ matricule.matricule }}">{{ matricule.matricule }}</li>
-                  {% endfor %}
-                </ul>
-              {% endif %}
+            <div class="custom-select-wrapper d-flex">
+              <input type="text" class="form-control me-2" id="id_matricule_serie" name="matricule_serie" placeholder="Série" maxlength="3" required {% if is_client %}autocomplete="off"{% endif %}>
+              <div class="custom-select-wrapper flex-grow-1">
+                <input type="text" class="form-control" id="id_matricule_ville" name="matricule_ville" placeholder="تونس" readonly>
+              </div>
+              <input type="text" class="form-control ms-2" id="id_matricule_numero" name="matricule_numero" placeholder="Numéro" maxlength="4" required {% if is_client %}autocomplete="off"{% endif %}>
             </div>
+            {% if is_client and user_matricules %}
+              <ul class="custom-select" id="matricule-list">
+                {% for matricule in user_matricules %}
+                  <li data-serie="{{ matricule.matricule_serie }}" data-ville="{{ matricule.matricule_ville }}" data-numero="{{ matricule.matricule_numero }}">{{ matricule.matricule_serie }} توانس {{ matricule.matricule_numero }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
           </div>
           <button type="submit" class="btn btn-primary btn-block">Réserver</button>
         </form>
@@ -52,60 +56,113 @@
 {% block extra_script %}
 <script src="{% static 'bootstrap/js/jquery-3.6.0.min.js' %}"></script>
 <script>
-    $(document).ready(function() {
-        var parkingId = '{{ parking.id }}';
-        var calculatePriceUrl = "{% url 'calculate-price' %}";
+   $(document).ready(function() {
+    var parkingId = '{{ parking.id }}';
+    var calculatePriceUrl = "{% url 'calculate-price' %}";
+    
+    var $dateArriveInput = $('#id_date_arrive');
+    var $dateSortieInput = $('#id_date_sortie');
+    
+    // Fonction pour formater la date au format YYYY-MM-DD
+    function formatDate(date) {
+        var d = new Date(date),
+            month = '' + (d.getMonth() + 1),
+            day = '' + d.getDate(),
+            year = d.getFullYear();
+
+        if (month.length < 2) 
+            month = '0' + month;
+        if (day.length < 2) 
+            day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+
+    // Initialisation : désactiver le champ de date de sortie
+    $dateSortieInput.prop('disabled', true);
+
+    // Configurer la date minimale pour la date d'arrivée (aujourd'hui)
+    var today = new Date();
+    $dateArriveInput.attr('min', formatDate(today));
+
+    // Gérer le changement de la date d'arrivée
+    $dateArriveInput.on('change', function() {
+        var selectedArriveDate = new Date($(this).val());
         
-        function updatePrice() {
-            var dateArrive = $('#id_date_arrive').val();
-            var dateSortie = $('#id_date_sortie').val();
-            
-            if (dateArrive && dateSortie) {
-                $.ajax({
-                    url: calculatePriceUrl,
-                    data: {
-                        'parking_id': parkingId,
-                        'date_arrive': dateArrive,
-                        'date_sortie': dateSortie
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        $('#price-display').text(data.price.toFixed(2));
-                        $('#duration-display').text(data.duration);
-                    }
-                });
-            }
+        // Activer le champ de date de sortie
+        $dateSortieInput.prop('disabled', false);
+        
+        // Configurer la date minimale pour la date de sortie (même jour que la date d'arrivée)
+        $dateSortieInput.attr('min', formatDate(selectedArriveDate));
+        
+        // Réinitialiser la date de sortie si elle est antérieure à la nouvelle date minimale
+        var currentDepartureDate = new Date($dateSortieInput.val());
+        if (currentDepartureDate < selectedArriveDate) {
+            $dateSortieInput.val('');
         }
+
+        updatePrice();
+    });
+
+    // Gérer le changement de la date de sortie
+    $dateSortieInput.on('change', updatePrice);
+
+    function updatePrice() {
+        var dateArrive = $dateArriveInput.val();
+        var dateSortie = $dateSortieInput.val();
         
-        $('#id_date_arrive, #id_date_sortie').on('change', updatePrice);
-
-        // Gestion de la liste des matricules
-        var $matriculeInput = $('#id_matricule');
-        var $matriculeList = $('#matricule-list');
-
-        $matriculeInput.on('focus input', function() {
-            var inputVal = $(this).val().toLowerCase();
-            $matriculeList.show();
-            $matriculeList.find('li').each(function() {
-                var liText = $(this).text().toLowerCase();
-                if (liText.indexOf(inputVal) > -1) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
+        if (dateArrive && dateSortie) {
+            $.ajax({
+                url: calculatePriceUrl,
+                data: {
+                    'parking_id': parkingId,
+                    'date_arrive': dateArrive,
+                    'date_sortie': dateSortie
+                },
+                dataType: 'json',
+                success: function(data) {
+                    $('#price-display').text(data.price.toFixed(2));
+                    $('#duration-display').text(data.duration);
                 }
             });
-        });
+        }
+    }
 
-        $matriculeList.on('click', 'li', function() {
-            $matriculeInput.val($(this).text());
-            $matriculeList.hide();
-        });
+    // Gestion de la liste des matricules
+    var $matriculeSerieInput = $('#id_matricule_serie');
+    var $matriculeVilleInput = $('#id_matricule_ville');
+    var $matriculeNumeroInput = $('#id_matricule_numero');
+    var $matriculeList = $('#matricule-list');
 
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.custom-select-wrapper').length) {
-                $matriculeList.hide();
+    function fillMatriculeFields(serie, ville, numero) {
+        $matriculeSerieInput.val(serie);
+        $matriculeVilleInput.val(ville);
+        $matriculeNumeroInput.val(numero);
+        $matriculeList.hide();
+    }
+
+    $matriculeSerieInput.on('input', function() {
+        var inputVal = $(this).val().toLowerCase();
+        $matriculeList.show();
+        $matriculeList.find('li').each(function() {
+            var liSerie = $(this).data('serie').toLowerCase();
+            if (liSerie.indexOf(inputVal) > -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
             }
         });
     });
+
+    $matriculeList.on('click', 'li', function() {
+        fillMatriculeFields($(this).data('serie'), $(this).data('ville'), $(this).data('numero'));
+    });
+
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.custom-select-wrapper').length) {
+            $matriculeList.hide();
+        }
+    });
+});
 </script>
 {% endblock %}
