@@ -100,6 +100,37 @@
                     </tr>
                     {% endfor %}
                 </tbody>
+    {% for reservation in reservations %}
+    <tr data-id="{{ reservation.id }}">
+        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
+        <td class="text-truncate" style="max-width: 150px;">{{ reservation.client.email }}</td>
+        {% endif %}
+        <td class="text-truncate parking text-center" style="max-width: 100px;">{{ reservation.parking.nom }}</td>
+        <td class="date-arrive">{{ reservation.date_arrive|date:"d-m-Y" }}</td>
+        <td class="date-sortie">{{ reservation.date_sortie|date:"d-m-Y" }}</td>
+        <td>
+            <span class="badge badge-{{ reservation.status|yesno:'success,warning,danger' }} statut">
+                {{ reservation.get_status_display }}
+            </span>
+        </td>
+        <td class="text-truncate access-code" style="max-width: 100px;">{{ reservation.access_code }}</td>
+        <td style="max-width: 300px; display: flex;">
+            <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
+                <i class="fas fa-eye"></i>
+            </button>
+            {% if reservation.status != 'expired' %}
+            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+>>>>>>> 26dd706 (Update template make_reservation)
             </table>
 
             <!-- Pagination -->
@@ -300,7 +331,9 @@ $(document).ready(function () {
                     <p><strong>Statut :</strong> ${data.statut}</p>
                     <p><strong>Code d'accès :</strong> ${data.access_code}</p>
                     <p><strong>Matricule :</strong> ${data.matricule}</p>
+
                     <p><strong>Prix :</strong> ${data.prix} Dinar${data.prix > 1 ? 's' : ''}</p>
+                    <p><strong>Prix :</strong> ${data.prix} Dinar{% if '${data.prix}' > 0 %}s{% endif %}</p>
                 `);
                 $('#detailReservationModal').modal('show');
             },
