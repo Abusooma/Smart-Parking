@@ -49,6 +49,7 @@ urlpatterns = [
     # Dashboard Client
     path('dashboard/user-client/', views.make_reservation, name='reserver'),
     path('dashboard/type/user-client/get-matricules/', views.get_matricules, name='get_matricules'),
+    path('check-user-type/', views.check_user_type, name='check_user_type'),
 
     # Parametre
     path('dashboard/parametre/', views.setup_parameter, name='parametres'),

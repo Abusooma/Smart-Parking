@@ -4,10 +4,9 @@ import logging
 import json
 import locale
 from django.db.models import F
-from math import ceil
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from .models import Client, Reservation, Matricule
 from django.db.models import Sum, Count
 from django.db.models import Q
@@ -15,7 +14,6 @@ from .models import Client
 from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from .models import Gerant, Parking
-from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
@@ -177,35 +175,15 @@ def paiement_view(request):
             email_for_new_user(
                 request, user, password, path_template='smartparking/emails/send_email_to_new_user.html')
         else:
-            # Cas où le gérant fait une réservation dans son propre parking
-            if user.user_type == 'gerant' and parking in Parking.objects.filter(gerant__user=user):
-                user.is_new_user = False
-                matricule_obj, _ = Matricule.objects.get_or_create(
-                    matricule=matricule, client=user)
-                reservation = Reservation.objects.create(
-                    parking=parking,
-                    client=user,
-                    date_arrive=date_arrive,
-                    date_sortie=date_sortie,
-                    access_code=Reservation().generate_access_code(),
-                    matricule=matricule
-                )
-
-                email_confirm_reservation(request, user, reservation)
-                return redirect('confirm_reservation', reservation_id=reservation.id)
-
             user.is_new_user = False
             user.save()
 
-        client_profile, _ = Client.objects.get_or_create(user=user)
-
-        # Créer ou récupérer l'objet Matricule
-        matricule_obj, _ = Matricule.objects.get_or_create(
-            matricule=matricule, client=client_profile)
+        Client.objects.get_or_create(user=user)
+        Matricule.objects.get_or_create(matricule=matricule, client=user)
 
         reservation = Reservation.objects.create(
             parking=parking,
-            client=client_profile,
+            client=user,
             date_arrive=date_arrive,
             date_sortie=date_sortie,
             access_code=Reservation().generate_access_code(),
@@ -232,7 +210,7 @@ def paiement_view(request):
 
 def reservation_confirmation(request, reservation_id):
     reservation = get_object_or_404(Reservation, id=reservation_id)
-    is_new_user = reservation.client.user.is_new_user
+    is_new_user = reservation.client.is_new_user
 
     context = {
         'reservation': reservation,
@@ -254,7 +232,7 @@ def calculate_price(request):
         parking = get_object_or_404(Parking, id=parking_id)
         date_arrive = datetime.strptime(date_arrive, '%Y-%m-%d')
         date_sortie = datetime.strptime(date_sortie, '%Y-%m-%d')
-        
+
         duration = (date_sortie - date_arrive).days + 1
 
         if duration <= 0:
@@ -287,7 +265,7 @@ def dashboard_view(request):
 
     elif user_logged.user_type == 'gerant':
         parkings = Parking.objects.filter(gerant__user=user_logged)
-        clients = Client.objects.filter(
+        clients = User.objects.filter(
             reservations__parking__gerant__user=user_logged).distinct()
         reservations = Reservation.objects.filter(
             parking__gerant__user=user_logged)
@@ -607,14 +585,14 @@ def get_reservations(request):
 def get_reservation_details(request, reservation_id):
     reservation = get_object_or_404(Reservation, id=reservation_id)
     data = {
-        'id': reservation.id,
-        'client': str(reservation.client.user.email),
-        'parking': str(reservation.parking),
+        'client': reservation.client.email,
+        'parking': reservation.parking.nom,
         'date_arrive': reservation.date_arrive.strftime('%d-%m-%Y'),
         'date_sortie': reservation.date_sortie.strftime('%d-%m-%Y'),
         'statut': reservation.status,
         'access_code': reservation.access_code,
-        'matricule': reservation.matricule
+        'matricule': reservation.matricule,
+        'prix': str(reservation.calculate_price)
     }
     return JsonResponse(data)
 
@@ -902,9 +880,15 @@ def search_parkings(request):
 @ensure_csrf_cookie
 @require_http_methods(["GET", "POST"])
 def make_reservation(request):
+    user_logged = request.user
     if request.method == "GET":
-        parkings = Parking.objects.filter(actif=True)
-        matricules = Matricule.objects.filter(client=request.user)
+        if user_logged.user_type == 'client':
+            parkings = Parking.objects.filter(actif=True)
+            matricules = Matricule.objects.filter(client=user_logged)
+
+        elif user_logged.user_type == 'gerant':
+            parkings = Parking.objects.filter(actif=True, gerant__user=user_logged)
+            matricules = []
 
         context = {
             'parkings': parkings,
@@ -991,3 +975,10 @@ def setup_parameter(request):
 def get_parking_price(request, parking_id):
     parking = get_object_or_404(Parking, id=parking_id)
     return JsonResponse({"tarif": float(parking.tarif)})
+
+
+@require_GET
+def check_user_type(request):
+    if request.user.is_authenticated:
+        return JsonResponse({'user_type': request.user.user_type})
+    return JsonResponse({'user_type': 'anonymous'}, status=401)

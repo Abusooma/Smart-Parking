@@ -47,7 +47,7 @@
               <i class="fas fa-home"></i> Accueil
             </a>
           </li>
-          {% if request.user.user_type == 'client' %}
+          {% if request.user.user_type == 'client' or request.user.user_type == 'gerant' %}
           <li class="{% if request.resolver_match.url_name == 'reserver' %}active{% endif %}">
             <a href="{% url 'reserver' %}"><i class="fas fa-car"></i> Réserver un parking</a>
           </li>
