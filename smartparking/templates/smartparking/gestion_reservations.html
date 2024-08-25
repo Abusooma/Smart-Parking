@@ -93,6 +93,11 @@
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}" {% if reservation.status == 'expired' %}disabled{% endif %}>
+                            {% if reservation.status != 'expired' %}
+                            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                             {% endif %}
@@ -130,7 +135,6 @@
     </tr>
     {% endfor %}
 </tbody>
->>>>>>> 26dd706 (Update template make_reservation)
             </table>
 
             <!-- Pagination -->
@@ -309,11 +313,15 @@
 
 {% block extra_script %}
 <script>
+
 $(document).ready(function () {
     let allParkings = [];
     let currentReservationId;
     let originalPrice = 0;
     let newPrice = 0;
+
+ $(document).ready(function () {
+    let allParkings = [];
 
     // Afficher les détails de la réservation
     $('.view-reservation').on('click', function () {
@@ -334,6 +342,7 @@ $(document).ready(function () {
 
                     <p><strong>Prix :</strong> ${data.prix} Dinar${data.prix > 1 ? 's' : ''}</p>
                     <p><strong>Prix :</strong> ${data.prix} Dinar{% if '${data.prix}' > 0 %}s{% endif %}</p>
+                    <p><strong>Prix :</strong> ${data.prix} Dinar${data.prix > 1 ? 's' : ''}</p>
                 `);
                 $('#detailReservationModal').modal('show');
             },
@@ -346,32 +355,64 @@ $(document).ready(function () {
 
     // Modifier une réservation
     $('.modify-reservation').on('click', function () {
-        const reservationId = $(this).data('id');
-        const isExpired = $(this).data('expired') === 'expired';
+    const reservationId = $(this).data('id');
+    const isExpired = $(this).data('expired') === 'expired';
 
-        if (isExpired) {
-            showAlert("Vous ne pouvez pas modifier une réservation expirée.", 'warning');
-            return;
+    if (isExpired) {
+        showAlert("Vous ne pouvez pas modifier une réservation expirée.", 'warning');
+        return;
+    }
+
+    // Charger les détails de la réservation
+    $.ajax({
+        url: `/reservations/${reservationId}/update/`,
+        method: 'GET',
+        success: function (data) {
+            if (data.success) {
+                allParkings = data.parkings;
+                populateRegions(data.regions);
+                populateForm(data.form_data);
+                $('#reservationId').val(reservationId);
+                $('#modifierReservationModal').modal('show');
+            } else {
+                showAlert(data.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error loading reservation for modification:', error);
+            showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
         }
+    });
+});
 
-        // Charger les détails de la réservation
+    // Mettre à jour la liste des parkings lorsque la région change
+    $('#region').on('change', function() {
+        const regionId = $(this).val();
+        updateParkingDropdown(regionId);
+    });
+
+    // Soumettre le formulaire de modification
+    $('#confirmerModificationBtn').on('click', function () {
+        const formData = new FormData($('#modifierReservationForm')[0]);
+        const reservationId = $('#reservationId').val();
+
         $.ajax({
             url: `/reservations/${reservationId}/update/`,
-            method: 'GET',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function (data) {
                 if (data.success) {
-                    allParkings = data.parkings;
-                    populateRegions(data.regions);
-                    populateForm(data.form_data);
-                    $('#reservationId').val(reservationId);
-                    $('#modifierReservationModal').modal('show');
+                    updateReservationInTable(data.reservation);
+                    $('#modifierReservationModal').modal('hide');
+                    showAlert('La réservation a été mise à jour avec succès.', 'success');
                 } else {
-                    showAlert(data.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
+                    showFormErrors(data.errors);
                 }
             },
-            error: function (xhr, status, error) {
-                console.error('Error loading reservation for modification:', error);
-                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors de la mise à jour de la réservation.', 'danger');
             }
         });
     });
@@ -380,6 +421,54 @@ $(document).ready(function () {
     $('.delete-reservation').on('click', function () {
         const reservationId = $(this).data('id');
         const isExpired = $(this).data('expired') === 'expired';
+    // Fonctions utilitaires
+    function populateForm(data) {
+        $('#region').val(data.region);
+        updateParkingDropdown(data.region, data.parking);
+        $('#date_arrive').val(data.date_arrive);
+        $('#date_sortie').val(data.date_sortie);
+        $('#id_matricule').val(data.matricule);
+    }
+
+    function populateRegions(regions) {
+        const regionSelect = $('#region');
+        regionSelect.empty();
+        regions.forEach(function (region) {
+            regionSelect.append($('<option>', {
+                value: region.id,
+                text: region.nom
+            }));
+        });
+    }
+
+    function updateParkingDropdown(regionId, selectedParkingId = null) {
+        const parkingSelect = $('#parking');
+        parkingSelect.empty();
+        
+        const filteredParkings = allParkings.filter(parking => parking.region_id == regionId);
+        
+        if (filteredParkings.length === 0) {
+            parkingSelect.append($('<option>', {
+                value: '',
+                text: 'Aucun parking disponible'
+            }));
+        } else {
+            filteredParkings.forEach(function (parking) {
+                parkingSelect.append($('<option>', {
+                    value: parking.id,
+                    text: parking.nom
+                }));
+            });
+        }
+        
+        if (selectedParkingId && filteredParkings.some(p => p.id == selectedParkingId)) {
+            parkingSelect.val(selectedParkingId);
+        } else {
+            parkingSelect.val(parkingSelect.find('option:first').val());
+        }
+        
+        updatePrice();
+    }
 
         if (isExpired) {
             showAlert("Vous ne pouvez pas supprimer une réservation expirée.", 'warning');
@@ -475,7 +564,6 @@ $(document).ready(function () {
             $('#price_difference').text('');
         }
     }
-
     // Modifier le comportement du bouton de confirmation de modification
     $('#confirmerModificationBtn').on('click', function () {
         const priceDifference = newPrice - originalPrice;
@@ -657,6 +745,15 @@ $(document).ready(function () {
         const today = new Date().toISOString().split('T')[0];
         $('#date_arrive').attr('min', today);
         $('#date_sortie').attr('min', $('#date_arrive').val() || today);
+    $('#date_arrive, #date_sortie, #parking').on('change', updatePrice);
+
+    // Assurer que la date de sortie n'est pas antérieure à la date d'arrivée
+    $('#date_arrive').on('change', function() {
+        $('#date_sortie').attr('min', $(this).val());
+        if ($('#date_sortie').val() < $(this).val()) {
+            $('#date_sortie').val($(this).val());
+        }
+        updatePrice();
     });
 });
 </script>
