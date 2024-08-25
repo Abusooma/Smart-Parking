@@ -88,11 +88,6 @@
                             <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            {% if request.user.user_type == 'client' %}
-                            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}" {% if reservation.status == 'expired' %}disabled{% endif %}>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}" {% if reservation.status == 'expired' %}disabled{% endif %}>
                             {% if reservation.status != 'expired' %}
                             <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
                                 <i class="fas fa-edit"></i>
@@ -105,36 +100,6 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-    {% for reservation in reservations %}
-    <tr data-id="{{ reservation.id }}">
-        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
-        <td class="text-truncate" style="max-width: 150px;">{{ reservation.client.email }}</td>
-        {% endif %}
-        <td class="text-truncate parking text-center" style="max-width: 100px;">{{ reservation.parking.nom }}</td>
-        <td class="date-arrive">{{ reservation.date_arrive|date:"d-m-Y" }}</td>
-        <td class="date-sortie">{{ reservation.date_sortie|date:"d-m-Y" }}</td>
-        <td>
-            <span class="badge badge-{{ reservation.status|yesno:'success,warning,danger' }} statut">
-                {{ reservation.get_status_display }}
-            </span>
-        </td>
-        <td class="text-truncate access-code" style="max-width: 100px;">{{ reservation.access_code }}</td>
-        <td style="max-width: 300px; display: flex;">
-            <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
-                <i class="fas fa-eye"></i>
-            </button>
-            {% if reservation.status != 'expired' %}
-            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
-                <i class="fas fa-trash"></i>
-            </button>
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</tbody>
             </table>
 
             <!-- Pagination -->
@@ -322,6 +287,7 @@ $(document).ready(function () {
 
  $(document).ready(function () {
     let allParkings = [];
+    let currentReservationId;
 
     // Afficher les détails de la réservation
     $('.view-reservation').on('click', function () {
@@ -363,27 +329,26 @@ $(document).ready(function () {
         return;
     }
 
-    // Charger les détails de la réservation
-    $.ajax({
-        url: `/reservations/${reservationId}/update/`,
-        method: 'GET',
-        success: function (data) {
-            if (data.success) {
-                allParkings = data.parkings;
-                populateRegions(data.regions);
-                populateForm(data.form_data);
-                $('#reservationId').val(reservationId);
-                $('#modifierReservationModal').modal('show');
-            } else {
-                showAlert(data.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
+        // Charger les détails de la réservation
+        $.ajax({
+            url: `/reservations/${reservationId}/update/`,
+            method: 'GET',
+            success: function (data) {
+                if (data.success) {
+                    allParkings = data.parkings;
+                    populateRegions(data.regions);
+                    populateForm(data.form_data);
+                    $('#reservationId').val(reservationId);
+                    $('#modifierReservationModal').modal('show');
+                } else {
+                    showAlert(data.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
+                }
+            },
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
             }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error loading reservation for modification:', error);
-            showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
-        }
+        });
     });
-});
 
     // Mettre à jour la liste des parkings lorsque la région change
     $('#region').on('change', function() {
@@ -395,6 +360,15 @@ $(document).ready(function () {
     $('#confirmerModificationBtn').on('click', function () {
         const formData = new FormData($('#modifierReservationForm')[0]);
         const reservationId = $('#reservationId').val();
+        const regionId = formData.get('region');
+        const parkingId = formData.get('parking');
+
+        // Vérifier que le parking appartient bien à la région sélectionnée
+        const selectedParking = allParkings.find(p => p.id == parkingId);
+        if (selectedParking && selectedParking.region_id != regionId) {
+            showAlert("Le parking sélectionné n'appartient pas à la région choisie.", 'danger');
+            return;
+        }
 
         $.ajax({
             url: `/reservations/${reservationId}/update/`,
@@ -428,6 +402,10 @@ $(document).ready(function () {
         $('#date_arrive').val(data.date_arrive);
         $('#date_sortie').val(data.date_sortie);
         $('#id_matricule').val(data.matricule);
+        // Mettre à jour les dates minimales
+        const today = new Date().toISOString().split('T')[0];
+        $('#date_arrive').attr('min', today);
+        $('#date_sortie').attr('min', data.date_arrive);
     }
 
     function populateRegions(regions) {
@@ -512,9 +490,9 @@ $(document).ready(function () {
         const dateArrive = $('#date_arrive').val();
         const dateSortie = $('#date_sortie').val();
 
-        console.log('Updating price with:', { parkingId, dateArrive, dateSortie });
-
-        if (parkingId && dateArrive && dateSortie) {
+        if (parkingId && dateArrive && dateSortie && dateArrive <= dateSortie) {
+            const duration = Math.ceil((dateSortie - dateArrive) / (1000 * 60 * 60 * 24));
+            
             $.ajax({
                 url: '/calculate-price/',
                 method: 'GET',
@@ -524,39 +502,8 @@ $(document).ready(function () {
                     date_sortie: dateSortie
                 },
                 success: function (data) {
-                    console.log('Price calculation response:', data);
-                    if (data.price !== undefined) {
-                        newPrice = parseFloat(data.price);
-                        const priceDifference = newPrice - originalPrice;
-                        const priceDifferenceElement = $('#price_difference');
-
-                        console.log('Original price:', originalPrice);
-                        console.log('New price:', newPrice);
-                        console.log('Price difference:', priceDifference);
-
-                        if (!isNaN(priceDifference)) {
-                            if (priceDifference > 0) {
-                                priceDifferenceElement.html(`<strong>Supplément à payer:</strong> ${priceDifference.toFixed(2)} TND <br><small>Ce montant sera prélevé après confirmation de la modification.</small>`);
-                                priceDifferenceElement.removeClass('text-success').addClass('text-danger');
-                            } else if (priceDifference < 0) {
-                                priceDifferenceElement.html(`<strong>Montant à rembourser:</strong> ${Math.abs(priceDifference).toFixed(2)} TND <br><small>Ce montant sera crédité sur votre compte après confirmation de la modification.</small>`);
-                                priceDifferenceElement.removeClass('text-danger').addClass('text-success');
-                            } else {
-                                priceDifferenceElement.html('<strong>Aucun changement de prix</strong>');
-                                priceDifferenceElement.removeClass('text-danger text-success');
-                            }
-                        } else {
-                            priceDifferenceElement.html('<strong>Erreur de calcul de prix</strong>');
-                            priceDifferenceElement.removeClass('text-success text-danger');
-                        }
-                    } else {
-                        console.error('Invalid response format:', data);
-                        $('#price_difference').text('Erreur lors du calcul du prix');
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error calculating price:', error);
-                    $('#price_difference').text('Erreur lors du calcul du prix');
+                    const price = data.tarif * duration;
+                    $('#estimated_price').text(`Prix estimé: ${price.toFixed(2)} TND`);
                 }
             });
         } else {
@@ -749,11 +696,19 @@ $(document).ready(function () {
 
     // Assurer que la date de sortie n'est pas antérieure à la date d'arrivée
     $('#date_arrive').on('change', function() {
-        $('#date_sortie').attr('min', $(this).val());
-        if ($('#date_sortie').val() < $(this).val()) {
-            $('#date_sortie').val($(this).val());
+        const selectedDate = $(this).val();
+        $('#date_sortie').attr('min', selectedDate);
+        if ($('#date_sortie').val() < selectedDate) {
+            $('#date_sortie').val(selectedDate);
         }
         updatePrice();
+    });
+
+    // Initialiser les dates minimales lors de l'ouverture du modal
+    $('#modifierReservationModal').on('show.bs.modal', function () {
+        const today = new Date().toISOString().split('T')[0];
+        $('#date_arrive').attr('min', today);
+        $('#date_sortie').attr('min', $('#date_arrive').val() || today);
     });
 });
 </script>
