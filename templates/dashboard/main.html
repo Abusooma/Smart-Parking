@@ -22,65 +22,71 @@
   <body>
     <div class="dashboard-wrapper">
       <!-- Sidebar -->
-      <nav id="sidebar">
-        <div class="sidebar-header">
-          {% if request.user.user_type == 'client' %}
-            <div class="sidebar-header-item">
-              <i class="fas fa-user"></i>
-              <span>Client Dashboard</span>
-            </div>
-          {% elif request.user.user_type == 'admin' %}
-            <div class="sidebar-header-item">
-              <i class="fas fa-crown"></i>
-              <span>Admin Dashboard</span>
-            </div>
-          {% elif request.user.user_type == 'gerant' %}
-            <div class="sidebar-header-item">
-              <i class="fas fa-briefcase"></i>
-              <span>Gérant Dashboard</span>
-            </div>
-          {% endif %}
-        </div>
-        <ul class="list-unstyled components">
-          <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-            <a href="{% url 'dashboard' %}">
-              <i class="fas fa-home"></i> Accueil
-            </a>
-          </li>
-          {% if request.user.user_type == 'client' %}
-          <li class="{% if request.resolver_match.url_name == 'reserver' %}active{% endif %}">
-            <a href="{% url 'reserver' %}"><i class="fas fa-car"></i> Réserver un parking</a>
-          </li>
-          {% elif request.user.user_type == 'admin' %}
-          <li class="{% if request.resolver_match.url_name == 'gerants' %}active{% endif %}">
-            <a href="{% url 'gerants' %}"><i class="fas fa-user-tie"></i> Gérants</a>
-          </li>
-          {% elif request.user.user_type == 'gerant' %}
-          <li class="{% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
-            <a href="{% url 'clients' %}"><i class="fas fa-users"></i> Clients</a>
-          </li>
-          {% endif %}
-          {% if request.user.user_type == 'gerant' or request.user.user_type == 'client' %}
-          <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
-            <a href="{% url 'reservations' %}"><i class="fas fa-calendar-check"></i>
-              {%if request.user.user_type == 'client' %} Mes{% endif %} Réservations</a>
-          </li>
-          {% endif %}
-          {% if request.user.user_type == 'gerant' %}
-          <li class="{% if request.resolver_match.url_name == 'parkings' %}active{% endif %}">
-            <a href="{% url 'parkings' %}"><i class="fas fa-parking"></i> Parkings</a>
-          </li>
-          {% endif %}
-          {% if request.user.user_type == 'admin' %}
-          <li class="{% if request.resolver_match.url_name == 'regions' %}active{% endif %}">
-            <a href="{% url 'regions' %}"><i class="fas fa-map-marker-alt"></i> Régions</a>
-          </li>
-          {% endif %}
-          <li class="{% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
-            <a href="{% url 'parametres' %}"><i class="fas fa-cog"></i> Paramètres</a>
-          </li>
-        </ul>
-      </nav>
+<nav id="sidebar">
+  <div class="sidebar-header">
+    {% if request.user.user_type == 'client' %}
+      <div class="sidebar-header-item">
+        <i class="fas fa-user"></i>
+        <span>Client Dashboard</span>
+      </div>
+    {% elif request.user.user_type == 'admin' %}
+      <div class="sidebar-header-item">
+        <i class="fas fa-crown"></i>
+        <span>Admin Dashboard</span>
+      </div>
+    {% elif request.user.user_type == 'gerant' %}
+      <div class="sidebar-header-item">
+        <i class="fas fa-briefcase"></i>
+        <span>Gérant Dashboard</span>
+      </div>
+    {% endif %}
+  </div>
+  <ul class="list-unstyled components">
+    <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+      <a href="{% url 'dashboard' %}">
+        <i class="fas fa-home"></i> Accueil
+      </a>
+    </li>
+    {% if request.user.user_type == 'client' or request.user.user_type == 'gerant' %}
+    <li class="{% if request.resolver_match.url_name == 'reserver' %}active{% endif %}">
+      <a href="{% url 'reserver' %}"><i class="fas fa-car"></i> Réserver un parking</a>
+    </li>
+    {% elif request.user.user_type == 'admin' %}
+    <li class="{% if request.resolver_match.url_name == 'gerants' %}active{% endif %}">
+      <a href="{% url 'gerants' %}"><i class="fas fa-user-tie"></i> Gérants</a>
+    </li>
+    {% elif request.user.user_type == 'gerant' %}
+    <li class="{% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
+      <a href="{% url 'clients' %}"><i class="fas fa-users"></i> Clients</a>
+    </li>
+    {% endif %}
+    {% if request.user.user_type == 'gerant' %}
+    <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
+      <a href="{% url 'reservations' %}"><i class="fas fa-calendar-check"></i> Réservations clients</a>
+    </li>
+    <li class="{% if request.resolver_match.url_name == 'mes_reservations' %}active{% endif %}">
+      <a href=""><i class="fas fa-bookmark"></i> Mes réservations</a>
+    </li>
+    {% elif request.user.user_type == 'client' %}
+    <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
+      <a href="{% url 'reservations' %}"><i class="fas fa-calendar-check"></i> Mes réservations</a>
+    </li>
+    {% endif %}
+    {% if request.user.user_type == 'gerant' %}
+    <li class="{% if request.resolver_match.url_name == 'parkings' %}active{% endif %}">
+      <a href="{% url 'parkings' %}"><i class="fas fa-parking"></i> Parkings</a>
+    </li>
+    {% endif %}
+    {% if request.user.user_type == 'admin' %}
+    <li class="{% if request.resolver_match.url_name == 'regions' %}active{% endif %}">
+      <a href="{% url 'regions' %}"><i class="fas fa-map-marker-alt"></i> Régions</a>
+    </li>
+    {% endif %}
+    <li class="{% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
+      <a href="{% url 'parametres' %}"><i class="fas fa-cog"></i> Paramètres</a>
+    </li>
+  </ul>
+</nav>
 
       <!-- Page Content -->
       <div id="content">

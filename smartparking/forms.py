@@ -1,3 +1,4 @@
+from .models import Reservation, Region, Parking
 from django.contrib.auth import authenticate
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
@@ -28,5 +29,46 @@ class CustomLoginForm(forms.Form):
                 raise forms.ValidationError("Email ou mot de passe incorrect.")
 
         return self.cleaned_data
+    
 
+class ReservationForm(forms.ModelForm):
+    region = forms.ModelChoiceField(
+        queryset=Region.objects.all(), required=True)
+    parking = forms.ModelChoiceField(
+        queryset=Parking.objects.all(), required=True)
+
+    class Meta:
+        model = Reservation
+        fields = ['region', 'parking', 'date_arrive',
+                  'date_sortie', 'matricule']
+        widgets = {
+            'date_arrive': forms.DateInput(attrs={'type': 'date'}),
+            'date_sortie': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['region'].initial = self.instance.parking.region
+            self.fields['parking'].queryset = Parking.objects.filter(
+                region=self.instance.parking.region)
+            self.fields['parking'].initial = self.instance.parking
+        elif 'region' in self.data:
+            try:
+                region_id = int(self.data.get('region'))
+                self.fields['parking'].queryset = Parking.objects.filter(
+                    region_id=region_id)
+            except (ValueError, TypeError):
+                pass
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date_arrive = cleaned_data.get('date_arrive')
+        date_sortie = cleaned_data.get('date_sortie')
+
+        if date_arrive and date_sortie and date_arrive > date_sortie:
+            raise forms.ValidationError(
+                "La date d'arrivée ne peut pas être postérieure à la date de sortie.")
+
+        return cleaned_data
     

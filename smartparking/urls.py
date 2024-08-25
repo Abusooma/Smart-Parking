@@ -30,7 +30,7 @@ urlpatterns = [
     path('reservations/<int:reservation_id>/update/', views.update_reservation, name='update_reservation'),
     path('reservations/<int:reservation_id>/delete/', views.delete_reservation, name='delete_reservation'),
     # UPDATE RESERVATION
-    path('get_parkings/<int:region_id>/', views.get_parkings_by_region, name='get_parkings_by_region'),
+    path('get_parkings/<int:region_id>/', views.get_parkings, name='get_parkings'),
     path('get_parking_price/<int:parking_id>/', views.get_parking_price, name='get_parkings_price'),
     # Gestion des Régions
     path('regions/', views.region_list, name='regions'),
@@ -49,6 +49,7 @@ urlpatterns = [
     # Dashboard Client
     path('dashboard/user-client/', views.make_reservation, name='reserver'),
     path('dashboard/type/user-client/get-matricules/', views.get_matricules, name='get_matricules'),
+    path('check-user-type/', views.check_user_type, name='check_user_type'),
 
     # Parametre
     path('dashboard/parametre/', views.setup_parameter, name='parametres'),
