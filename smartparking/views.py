@@ -170,13 +170,13 @@ def paiement_view(request):
         
         if created:
             password = generate_password()
+            print(password)
             user.set_password(password)
             user.save()
             email_for_new_user(
                 request, user, password, path_template='smartparking/emails/send_email_to_new_user.html')
         else:
             user.is_new_user = False
-            print(user)
             user.save()
 
         Client.objects.get_or_create(user=user)
@@ -275,7 +275,7 @@ def dashboard_view(request):
     else:
         parkings = Parking.objects.all()
         clients = Client.objects.none()
-        reservations = Reservation.objects.filter(client__user=user_logged).order_by('-id')
+        reservations = Reservation.objects.filter(client=user_logged).order_by('-id')
         total_reservation_active = reservations.filter(status='active').count() or 0
     
     
@@ -521,6 +521,7 @@ def client_detail(request, client_id):
 
     return render(request, 'smartparking/detail_client.html', context)
 
+
 def block_client(request, client_id):
     if request.method == 'POST':
         try:
@@ -533,39 +534,94 @@ def block_client(request, client_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-def get_reservations(request):
-    """ 
-    Cette vue traite l'affichage des resevations et 
-    gere le systeme de filtrage de ces reservation 
-    """
+# def get_reservations(request):
+#     """ 
+#     Cette vue traite l'affichage des resevations et 
+#     gere le systeme de filtrage de ces reservation 
+#     """
 
+#     user_logged = request.user
+
+#     reservations = Reservation.objects.all().order_by("-id")
+
+#     if user_logged.user_type == 'gerant':
+#         reservations = Reservation.objects.filter(parking__gerant__user=user_logged).order_by('-id')
+#     elif user_logged.user_type == 'client':
+#         reservations = Reservation.objects.filter(client=user_logged).order_by('-id')
+
+#     date_debut = request.GET.get('date_debut')
+#     if date_debut:
+#         reservations = reservations.filter(date_arrive__gte=date_debut).order_by("-id")
+
+#     date_fin = request.GET.get('date_fin')
+#     if date_fin:
+#         reservations = reservations.filter(date_sortie__lte=date_fin).order_by("-id")
+
+#     statut = request.GET.get('statut')
+#     if statut:
+#         reservations = reservations.filter(status=statut).order_by('-id')
+
+
+#     parking_nom = request.GET.get('parking')
+#     if parking_nom:
+#         reservations = reservations.filter(parking__nom=parking_nom).order_by("-id")
+
+
+#     paginator = Paginator(reservations, 10)  # 10 réservations par page
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     context = {
+#         'reservations': page_obj,
+#         'is_paginated': page_obj.has_other_pages(),
+#         'page_obj': page_obj,
+#         'paginator': paginator,
+#         'parkings': Parking.objects.all(),
+#     }
+
+#     return render(request, 'smartparking/gestion_reservations.html', context)
+
+
+def get_reservations(request):
     user_logged = request.user
 
-    reservations = Reservation.objects.all().order_by("-id")
-
+    # Filtrer les réservations en fonction du type d'utilisateur
     if user_logged.user_type == 'gerant':
-        reservations = Reservation.objects.filter(parking__gerant__user=user_logged).order_by('-id')
+        reservations = Reservation.objects.filter(
+            parking__gerant__user=user_logged)
     elif user_logged.user_type == 'client':
-        reservations = Reservation.objects.filter(client__user=user_logged).order_by('-id')
+        reservations = Reservation.objects.filter(client=user_logged)
+    else:  # Pour les admins ou autres types d'utilisateurs
+        reservations = Reservation.objects.all()
 
+    # Mise à jour automatique du statut des réservations
+    for reservation in reservations:
+        if reservation.status != 'cancel':  # Ne pas modifier les réservations annulées
+            if reservation.date_sortie < timezone.now() + timedelta(hours=24):
+                reservation.status = 'expired'
+            elif reservation.date_arrive <= timezone.now() <= reservation.date_sortie:
+                reservation.status = 'active'
+            reservation.save()
+
+    # Appliquer les filtres
     date_debut = request.GET.get('date_debut')
-    if date_debut:
-        reservations = reservations.filter(date_arrive__gte=date_debut).order_by("-id")
-
     date_fin = request.GET.get('date_fin')
-    if date_fin:
-        reservations = reservations.filter(date_sortie__lte=date_fin).order_by("-id")
-
     statut = request.GET.get('statut')
-    if statut:
-        reservations = reservations.filter(status=statut).order_by('-id')
-
-
     parking_nom = request.GET.get('parking')
+
+    if date_debut:
+        reservations = reservations.filter(date_arrive__gte=date_debut)
+    if date_fin:
+        reservations = reservations.filter(date_sortie__lte=date_fin)
+    if statut:
+        reservations = reservations.filter(status=statut)
     if parking_nom:
-        reservations = reservations.filter(parking__nom=parking_nom).order_by("-id")
+        reservations = reservations.filter(parking__nom=parking_nom)
 
+    # Tri final
+    reservations = reservations.order_by("-date_arrive", "-id")
 
+    # Pagination
     paginator = Paginator(reservations, 10)  # 10 réservations par page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -579,6 +635,7 @@ def get_reservations(request):
     }
 
     return render(request, 'smartparking/gestion_reservations.html', context)
+
 
 def get_reservation_details(request, reservation_id):
     reservation = get_object_or_404(Reservation, id=reservation_id)
@@ -610,7 +667,7 @@ def update_reservation(request, reservation_id):
                 'reservation': {
                     'id': updated_reservation.id,
                     'client': str(updated_reservation.client),
-                    'parking': str(updated_reservation.parking),
+                    'parking': str(updated_reservation.parking.nom),
                     'date_arrive': updated_reservation.date_arrive.strftime('%Y-%m-%d'),
                     'date_sortie': updated_reservation.date_sortie.strftime('%Y-%m-%d'),
                     'statut': updated_reservation.status,
@@ -618,8 +675,6 @@ def update_reservation(request, reservation_id):
                 }
             })
         else:
-            for error in list(form.errors.values()):
-                print(error)
             return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = ReservationForm(instance=reservation)
