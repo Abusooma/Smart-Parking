@@ -35,7 +35,7 @@
                 </div>
                 <div class="col-md-3 mb-3">
                     <label for="parking">Parking</label>
-                    <select class="form-control" id="parking" name="parking">
+                    <select class="form-control" id="parking_i" name="parking">
                         <option value="">Tous</option>
                         {% for parking in parkings %}
                         <option value="{{ parking.nom }}">{{ parking.nom }}</option>
@@ -70,36 +70,36 @@
                     </tr>
                 </thead>
                 <tbody>
-    {% for reservation in reservations %}
-    <tr data-id="{{ reservation.id }}">
-        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
-        <td class="text-truncate" style="max-width: 150px;">{{ reservation.client.email }}</td>
-        {% endif %}
-        <td class="text-truncate parking text-center" style="max-width: 100px;">{{ reservation.parking.nom }}</td>
-        <td class="date-arrive">{{ reservation.date_arrive|date:"d-m-Y" }}</td>
-        <td class="date-sortie">{{ reservation.date_sortie|date:"d-m-Y" }}</td>
-        <td>
-            <span class="badge badge-{{ reservation.status|yesno:'success,warning,danger' }} statut">
-                {{ reservation.get_status_display }}
-            </span>
-        </td>
-        <td class="text-truncate access-code" style="max-width: 100px;">{{ reservation.access_code }}</td>
-        <td style="max-width: 300px; display: flex;">
-            <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
-                <i class="fas fa-eye"></i>
-            </button>
-            {% if reservation.status != 'expired' %}
-            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
-                <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
-                <i class="fas fa-trash"></i>
-            </button>
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-</tbody>
+                    {% for reservation in reservations %}
+                    <tr data-id="{{ reservation.id }}">
+                        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
+                        <td class="text-truncate" style="max-width: 150px;">{{ reservation.client.email }}</td>
+                        {% endif %}
+                        <td class="text-truncate parking text-center" style="max-width: 100px;">{{ reservation.parking.nom }}</td>
+                        <td class="date-arrive">{{ reservation.date_arrive|date:"d-m-Y" }}</td>
+                        <td class="date-sortie">{{ reservation.date_sortie|date:"d-m-Y" }}</td>
+                        <td>
+                            <span class="badge badge-{{ reservation.status|yesno:'success,warning,danger' }} statut">
+                                {{ reservation.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-truncate access-code" style="max-width: 100px;">{{ reservation.access_code }}</td>
+                        <td style="max-width: 300px; display: flex;">
+                            <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if reservation.status != 'expired' %}
+                            <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
 
             <!-- Pagination -->
@@ -166,7 +166,7 @@
     </div>
 </div>
 
-<!-- Modifier la réservation Modal -->
+<!-- Modal Modifier la réservation -->
 <div class="modal fade" id="modifierReservationModal" tabindex="-1" role="dialog" aria-labelledby="modifierReservationModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -184,45 +184,29 @@
                         <select class="form-control" id="region" name="region" required>
                             <!-- Options will be populated dynamically -->
                         </select>
+                        <div id="region-error" class="invalid-feedback"></div>
                     </div>
                     <div class="form-group">
                         <label for="parking">Parking</label>
                         <select class="form-control" id="parking" name="parking" required>
                             <!-- Options will be populated dynamically -->
                         </select>
+                        <div id="parking-error" class="invalid-feedback"></div>
                     </div>
                     <div class="form-group">
                         <label for="date_arrive">Date d'arrivée</label>
                         <input type="date" class="form-control" id="date_arrive" name="date_arrive" required>
+                        <div id="date_arrive-error" class="invalid-feedback"></div>
                     </div>
                     <div class="form-group">
                         <label for="date_sortie">Date de sortie</label>
                         <input type="date" class="form-control" id="date_sortie" name="date_sortie" required>
+                        <div id="date_sortie-error" class="invalid-feedback"></div>
                     </div>
                     <div class="form-group">
-            <label for="id_matricule">Matricule de la voiture</label>
-            <div class="custom-select-wrapper d-flex">
-              <input type="text" class="form-control me-2" id="id_matricule_serie" name="matricule_serie" placeholder="Série" maxlength="3" required {% if is_client %}autocomplete="off"{% endif %}>
-              <div class="custom-select-wrapper flex-grow-1">
-                <input type="text" class="form-control" id="id_matricule_ville" name="matricule_ville" placeholder="توانس" readonly>
-              </div>
-              <input type="text" class="form-control ms-2" id="id_matricule_numero" name="matricule_numero" placeholder="Numéro" maxlength="4" required {% if is_client %}autocomplete="off"{% endif %}>
-            </div>
-            {% if is_client and user_matricules %}
-              <ul class="custom-select" id="matricule-list">
-                {% for matricule in user_matricules %}
-                  <li data-serie="{{ matricule.matricule_serie }}" data-ville="{{ matricule.matricule_ville }}" data-numero="{{ matricule.matricule_numero }}">{{ matricule.matricule_serie }} توانس {{ matricule.matricule_numero }}</li>
-                {% endfor %}
-              </ul>
-            {% endif %}
-          </div>
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="annuler" name="annuler">
-                            <label class="form-check-label" for="annuler">
-                                Annuler la réservation
-                            </label>
-                        </div>
+                        <label for="id_matricule">Matricule</label>
+                        <input type="text" class="form-control" id="id_matricule" name="matricule" required>
+                        <div id="matricule-error" class="invalid-feedback"></div>
                     </div>
                     <div id="estimated_price" class="mt-3"></div>
                 </form>
@@ -235,7 +219,7 @@
     </div>
 </div>
 
-<!-- Supprimer la réservation Modal -->
+<!-- Modal Supprimer la réservation -->
 <div class="modal fade" id="supprimerReservationModal" tabindex="-1" role="dialog" aria-labelledby="supprimerReservationModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -259,7 +243,9 @@
 
 {% block extra_script %}
 <script>
-$(document).ready(function () {
+ $(document).ready(function () {
+    let allParkings = [];
+
     // Afficher les détails de la réservation
     $('.view-reservation').on('click', function () {
         const reservationId = $(this).data('id');
@@ -276,7 +262,7 @@ $(document).ready(function () {
                     <p><strong>Statut :</strong> ${data.statut}</p>
                     <p><strong>Code d'accès :</strong> ${data.access_code}</p>
                     <p><strong>Matricule :</strong> ${data.matricule}</p>
-                    <p><strong>Prix :</strong> ${data.prix} Dinar{% if '${data.prix}' > 0 %}s{% endif %}</p>
+                    <p><strong>Prix :</strong> ${data.prix} Dinar${data.prix > 1 ? 's' : ''}</p>
                 `);
                 $('#detailReservationModal').modal('show');
             },
@@ -296,105 +282,107 @@ $(document).ready(function () {
             return;
         }
 
-        // Fetch reservation details and populate the form
+        // Charger les détails de la réservation
         $.ajax({
-            url: `/reservations/${reservationId}/details/`,
+            url: `/reservations/${reservationId}/update/`,
             method: 'GET',
             success: function (data) {
-                $('#reservationId').val(data.id);
-                $('#date_arrive').val(data.date_arrive.split(' ')[0]);
-                $('#date_sortie').val(data.date_sortie.split(' ')[0]);
-                $('#annuler').prop('checked', data.statut === 'cancel');
-
-                // Set minimum date for date inputs
-                const today = new Date().toISOString().split('T')[0];
-                $('#date_arrive, #date_sortie').attr('min', today);
-
-                // Populate regions dropdown
-                populateRegionsDropdown(data.region_id, data.parking_id);
-
-                // Split matricule
-                const matricule = data.matricule || '';
-                const [serie = '', numero = ''] = (matricule.split('تونس').length > 1) ? matricule.split('تونس') : ['', ''];
-                $('#id_matricule_serie').val(serie.trim());
-                $('#id_matricule_numero').val(numero.trim());
-
-                $('#modifierReservationModal').modal('show');
+                if (data.success) {
+                    allParkings = data.parkings;
+                    populateRegions(data.regions);
+                    populateForm(data.form_data);
+                    $('#reservationId').val(reservationId);
+                    $('#modifierReservationModal').modal('show');
+                } else {
+                    showAlert(data.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
+                }
             },
-            error: function (xhr, status, error) {
-                showAlert('Une erreur est survenue lors du chargement des détails de la réservation: ' + error, 'danger');
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors du chargement de la réservation.', 'danger');
             }
         });
     });
 
-    // Populate regions dropdown
-    function populateRegionsDropdown(selectedRegionId, selectedParkingId) {
+    // Mettre à jour la liste des parkings lorsque la région change
+    $('#region').on('change', function() {
+        const regionId = $(this).val();
+        updateParkingDropdown(regionId);
+    });
+
+    // Soumettre le formulaire de modification
+    $('#confirmerModificationBtn').on('click', function () {
+        const formData = new FormData($('#modifierReservationForm')[0]);
+        const reservationId = $('#reservationId').val();
+
         $.ajax({
-            url: '/get-regions/',
-            method: 'GET',
-            success: function (regionData) {
-                const regionSelect = $('#region');
-                regionSelect.empty();
-                regionData.regions.forEach(function (region) {
-                    regionSelect.append($('<option>', {
-                        value: region.id,
-                        text: region.nom
-                    }));
-                });
-                if (selectedRegionId) {
-                    regionSelect.val(selectedRegionId);
-                    // Populate parkings dropdown based on selected region
-                    updateParkingDropdown(selectedRegionId, selectedParkingId);
+            url: `/reservations/${reservationId}/update/`,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (data) {
+                if (data.success) {
+                    updateReservationInTable(data.reservation);
+                    $('#modifierReservationModal').modal('hide');
+                    showAlert('La réservation a été mise à jour avec succès.', 'success');
                 } else {
-                    showAlert('Aucune région sélectionnée pour cette réservation.', 'warning');
+                    showFormErrors(data.errors);
                 }
             },
-            error: function (xhr, status, error) {
-                showAlert('Erreur lors de la récupération des régions: ' + error, 'danger');
+            error: function (xhr) {
+                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors de la mise à jour de la réservation.', 'danger');
             }
+        });
+    });
+
+    // Fonctions utilitaires
+    function populateForm(data) {
+        $('#region').val(data.region);
+        updateParkingDropdown(data.region, data.parking);
+        $('#date_arrive').val(data.date_arrive);
+        $('#date_sortie').val(data.date_sortie);
+        $('#id_matricule').val(data.matricule);
+    }
+
+    function populateRegions(regions) {
+        const regionSelect = $('#region');
+        regionSelect.empty();
+        regions.forEach(function (region) {
+            regionSelect.append($('<option>', {
+                value: region.id,
+                text: region.nom
+            }));
         });
     }
 
     function updateParkingDropdown(regionId, selectedParkingId = null) {
-    if (!regionId) {
-        showAlert('Aucune région sélectionnée.', 'warning');
-        return;
-    }
-    console.log(`Fetching parkings for region ${regionId}`);
-    $.ajax({
-        url: `/get_parkings/${regionId}/`,
-        method: 'GET',
-        success: function (parkingData) {
-            console.log('Received parking data:', parkingData);
-            const parkingSelect = $('#parking');
-            parkingSelect.empty();
-            if (parkingData.parkings && parkingData.parkings.length > 0) {
-                parkingData.parkings.forEach(function (parking) {
-                    parkingSelect.append($('<option>', {
-                        value: parking.id,
-                        text: parking.nom
-                    }));
-                });
-                if (selectedParkingId) {
-                    parkingSelect.val(selectedParkingId);
-                }
-                updatePrice();
-                console.log('Parkings loaded successfully');
-            } else {
-                showAlert('Aucun parking trouvé pour cette région.', 'warning');
-                console.log('No parkings found for this region');
-            }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error fetching parkings:', status, error);
-            console.log('XHR response:', xhr.responseText);
-            showAlert('Erreur lors de la récupération des parkings: ' + error, 'danger');
+        const parkingSelect = $('#parking');
+        parkingSelect.empty();
+        
+        const filteredParkings = allParkings.filter(parking => parking.region_id == regionId);
+        
+        if (filteredParkings.length === 0) {
+            parkingSelect.append($('<option>', {
+                value: '',
+                text: 'Aucun parking disponible'
+            }));
+        } else {
+            filteredParkings.forEach(function (parking) {
+                parkingSelect.append($('<option>', {
+                    value: parking.id,
+                    text: parking.nom
+                }));
+            });
         }
-    });
-}
-
-    // Update price when dates change
-    $('#date_arrive, #date_sortie, #parking').on('change', updatePrice);
+        
+        if (selectedParkingId && filteredParkings.some(p => p.id == selectedParkingId)) {
+            parkingSelect.val(selectedParkingId);
+        } else {
+            parkingSelect.val(parkingSelect.find('option:first').val());
+        }
+        
+        updatePrice();
+    }
 
     function updatePrice() {
         const parkingId = $('#parking').val();
@@ -417,42 +405,6 @@ $(document).ready(function () {
         }
     }
 
-    // Ensure date_sortie is not before date_arrive
-    $('#date_arrive').on('change', function() {
-        $('#date_sortie').attr('min', $(this).val());
-    });
-
-    // Submit modification
-    $('#confirmerModificationBtn').on('click', function () {
-        const formData = new FormData($('#modifierReservationForm')[0]);
-        const reservationId = $('#reservationId').val();
-
-        // Combine matricule parts
-        const matriculeSerie = $('#id_matricule_serie').val();
-        const matriculeNumero = $('#id_matricule_numero').val();
-        formData.set('matricule', `${matriculeSerie}تونس${matriculeNumero}`);
-
-        $.ajax({
-            url: `/reservations/${reservationId}/update/`,
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (data) {
-                if (data.success) {
-                    updateReservationInTable(data.reservation);
-                    $('#modifierReservationModal').modal('hide');
-                    showAlert('La réservation a été mise à jour avec succès.', 'success');
-                } else {
-                    showAlert(data.message || 'Une erreur est survenue lors de la mise à jour de la réservation.', 'danger');
-                }
-            },
-            error: function (xhr) {
-                showAlert(xhr.responseJSON?.message || 'Une erreur est survenue lors de la mise à jour de la réservation.', 'danger');
-            }
-        });
-    });
-
     function updateReservationInTable(reservation) {
         const row = $(`tr[data-id="${reservation.id}"]`);
         row.find('.parking').text(reservation.parking);
@@ -460,6 +412,15 @@ $(document).ready(function () {
         row.find('.date-sortie').text(reservation.date_sortie.split(' ')[0]);
         row.find('.statut').text(reservation.statut);
         row.find('.access-code').text(reservation.access_code);
+    }
+
+    function showFormErrors(errors) {
+        $('.invalid-feedback').hide();
+        for (const [field, errorMessages] of Object.entries(errors)) {
+            const errorElement = $(`#${field}-error`);
+            errorElement.text(errorMessages.join(' '));
+            errorElement.show();
+        }
     }
 
     function showAlert(message, type) {
@@ -473,6 +434,18 @@ $(document).ready(function () {
         `;
         $('#alertContainer').html(alertHtml);
     }
+
+    // Mise à jour du prix lors du changement de dates ou de parking
+    $('#date_arrive, #date_sortie, #parking').on('change', updatePrice);
+
+    // Assurer que la date de sortie n'est pas antérieure à la date d'arrivée
+    $('#date_arrive').on('change', function() {
+        $('#date_sortie').attr('min', $(this).val());
+        if ($('#date_sortie').val() < $(this).val()) {
+            $('#date_sortie').val($(this).val());
+        }
+        updatePrice();
+    });
 });
 </script>
 {% endblock %}
