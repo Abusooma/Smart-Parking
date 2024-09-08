@@ -14,6 +14,7 @@ def clean_email(email):
         raise ValueError("Adresse email invalide") from e
 
 
+
 def email_for_new_user(request, user, password, path_template):
     try:
         subject = "Smart"

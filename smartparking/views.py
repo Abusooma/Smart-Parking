@@ -98,7 +98,8 @@ def logout_view(request):
 def reservation_view(request, *args, **kwargs):
     pk = kwargs.get('pk')
     parking = get_object_or_404(Parking, pk=pk)
-    if parking.nombre_place_dispo() <= 0:
+
+    if parking.nombre_place_dispo() == 0:
         messages.warning(request, "Le parking sélectionné n'a plus de place disponible pour une réservation..!")
         return redirect("home")
 
@@ -266,6 +267,60 @@ def calculate_price(request):
         return JsonResponse({'error': 'Une erreur est survenue'}, status=500)
 
 
+# @login_required
+# def dashboard_view(request):
+#     user_logged = request.user
+
+#     gerants = Gerant.objects.all()
+#     total_region = Region.objects.all().count()
+#     total_reservation_active = 0
+
+#     if user_logged.user_type == 'admin':
+#         parkings = Parking.objects.all()
+#         clients = Client.objects.all()
+#         reservations = Reservation.objects.all().order_by('-id')
+
+
+#     elif user_logged.user_type == 'gerant':
+#         parkings = Parking.objects.filter(gerant__user=user_logged)
+#         clients = CustomUser.objects.filter(
+#             reservations__parking__gerant__user=user_logged).distinct()
+#         reservations = Reservation.objects.filter(
+#             parking__gerant__user=user_logged).order_by('-id')
+
+#     else:
+#         parkings = Parking.objects.all()
+#         clients = Client.objects.none()
+#         reservations = Reservation.objects.filter(client=user_logged).order_by('-id')
+#         total_reservation_active = reservations.filter(status='active').count() or 0
+
+
+#     total_parking = parkings.count()
+#     total_gerant = gerants.count()
+#     total_reservation = reservations.count()
+#     total_client = clients.count()
+
+#     # Utilisez l'agrégation pour calculer le total des revenus
+#     total_revenu = reservations.aggregate(Sum('parking__tarif'))[
+#         'parking__tarif__sum'] or 0
+
+#     # Calculez les parkings populaires
+#     parking_populaires = [parking for parking in parkings if parking.taux_occupation > 2]
+
+#     context = {
+#         'total_gerant': total_gerant,
+#         'total_client': total_client,
+#         'total_reservation': total_reservation,
+#         'total_reservation_active': total_reservation_active,
+#         'total_revenu': total_revenu,
+#         'parking_populaires': parking_populaires,
+#         'recervation_recentes': reservations.order_by('-date_arrive')[:3],
+#         'total_parking': total_parking,
+#         'total_region': total_region
+#     }
+
+#     return render(request, 'smartparking/dashboard.html', context=context)
+
 @login_required
 def dashboard_view(request):
     user_logged = request.user
@@ -275,20 +330,20 @@ def dashboard_view(request):
     if user_logged.user_type == 'admin':
         parkings = Parking.objects.all()
         clients = Client.objects.all()
-        reservations = Reservation.objects.all()
+        reservations = Reservation.objects.all().order_by('-id')
         
 
     elif user_logged.user_type == 'gerant':
         parkings = Parking.objects.filter(gerant__user=user_logged)
-        clients = Client.objects.filter(
+        clients = User.objects.filter(
             reservations__parking__gerant__user=user_logged).distinct()
         reservations = Reservation.objects.filter(
-            parking__gerant__user=user_logged)
+            parking__gerant__user=user_logged).order_by('-id')
     
     else:
         parkings = Parking.objects.all()
         clients = Client.objects.none()
-        reservations = Reservation.objects.filter(client__user=user_logged).order_by('-id')
+        reservations = Reservation.objects.filter(client=user_logged).order_by('-id')
         total_reservation_active = reservations.filter(status='active').count() or 0
     
     
@@ -412,10 +467,6 @@ def delete_gerant(request, gerant_id):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-
-def get_parkings(request):
-    parkings = Parking.objects.filter(actif=True).values('id', 'nom')
-    return JsonResponse(list(parkings), safe=False)
 
 
 def get_gerant(request, gerant_id):
@@ -569,11 +620,11 @@ def block_client(request, client_id):
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-def get_reservations(request):
-    """ 
-    Cette vue traite l'affichage des resevations et 
-    gere le systeme de filtrage de ces reservation 
-    """
+# def get_reservations(request):
+#     """ 
+#     Cette vue traite l'affichage des resevations et 
+#     gere le systeme de filtrage de ces reservation 
+#     """
 
     user_logged = request.user
 
@@ -622,7 +673,8 @@ def get_reservations(request):
 
     # Filtrer les réservations en fonction du type d'utilisateur
     if user_logged.user_type == 'gerant':
-        reservations = Reservation.objects.filter(parking__gerant__user=user_logged).order_by('-id')
+        reservations = Reservation.objects.filter(
+            parking__gerant__user=user_logged)
     elif user_logged.user_type == 'client':
         reservations = Reservation.objects.filter(client__user=user_logged).order_by('-id')
 
@@ -699,7 +751,7 @@ def update_reservation(request, reservation_id):
                 'reservation': {
                     'id': updated_reservation.id,
                     'client': str(updated_reservation.client),
-                    'parking': str(updated_reservation.parking),
+                    'parking': str(updated_reservation.parking.nom),
                     'date_arrive': updated_reservation.date_arrive.strftime('%Y-%m-%d'),
                     'date_sortie': updated_reservation.date_sortie.strftime('%Y-%m-%d'),
                     'statut': updated_reservation.status,
@@ -707,8 +759,6 @@ def update_reservation(request, reservation_id):
                 }
             })
         else:
-            for error in list(form.errors.values()):
-                print(error)
             return JsonResponse({'success': False, 'errors': form.errors}, status=400)
     else:
         form = ReservationForm(instance=reservation)
@@ -720,12 +770,22 @@ def update_reservation(request, reservation_id):
                 'parking': str(reservation.parking),
                 'date_arrive': reservation.date_arrive.strftime('%Y-%m-%d'),
                 'date_sortie': reservation.date_sortie.strftime('%Y-%m-%d'),
-                'statut': reservation.status,
-                'access_code': reservation.access_code,
-            }
+                'matricule': reservation.matricule,
+            },
+            'regions': [{'id': region.id, 'nom': region.nom} for region in Region.objects.all()],
+            'parkings': [{'id': parking.id, 'nom': parking.nom, 'region_id': parking.region.id} for parking in Parking.objects.all()]
         })
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+def get_parkings(request, region_id):
+    parkings = Parking.objects.filter(region_id=region_id)
+    return JsonResponse({
+        'parkings': [{'id': parking.id, 'nom': parking.nom} for parking in parkings]
+    })
+
+# def get_parking_price(request, parking_id):
+#     parking = get_object_or_404(Parking, id=parking_id)
+#     return JsonResponse({'tarif': parking.tarif})
 
 
 def delete_reservation(request, reservation_id):
@@ -989,7 +1049,6 @@ def make_reservation(request):
 
     elif request.method == "POST":
         parking_id = request.POST.get('parking_id')
-        matricule = request.POST.get('matricule_serie') + request.POST.get('matricule_numero')
         matricule = request.POST.get('matricule_serie') + request.POST.get('matricule_numero')   
         date_arrive = request.POST.get('date_arrive')
         date_sortie = request.POST.get('date_sortie')
@@ -1063,7 +1122,43 @@ def setup_parameter(request):
     return render(request, 'smartparking/parametre.html')
 
 
+@login_required
+@require_POST
+def update_user_info(request):
+    user = request.user
+    user.first_name = request.POST.get('first_name')
+    user.last_name = request.POST.get('last_name')
+    user.telephone = request.POST.get('telephone')
+    user.save()
+    return JsonResponse({'status': 'success'})
+
+
+@login_required
+@require_POST
+def change_password(request):
+    user = request.user
+    current_password = request.POST.get('current_password')
+    new_password = request.POST.get('new_password')
+
+    if user.check_password(current_password):
+        user.set_password(new_password)
+        user.save()
+        # Important pour maintenir la session de l'utilisateur
+        update_session_auth_hash(request, user)
+        return JsonResponse({'status': 'success'})
+    else:
+        return JsonResponse({'status': 'error'}, status=400)
+
+
+# Vues supplementaires
 @require_http_methods(["GET"])
 def get_parking_price(request, parking_id):
     parking = get_object_or_404(Parking, id=parking_id)
     return JsonResponse({"tarif": float(parking.tarif)})
+
+
+@require_GET
+def check_user_type(request):
+    if request.user.is_authenticated:
+        return JsonResponse({'user_type': request.user.user_type})
+    return JsonResponse({'user_type': 'anonymous'}, status=401)
