@@ -4,23 +4,11 @@
 
 SmartParking est une plateforme innovante de réservation de parkings développée avec Django. Elle offre aux clients la possibilité de réserver facilement des places de stationnement en fonction de leur localisation.
 
-## Table des matières
-1. [Aperçu](#aperçu)
-2. [Fonctionnalités](#fonctionnalités)
-3. [Captures d'écran](#captures-décran)
-4. [Installation](#installation)
-5. [Configuration](#configuration)
-6. [Utilisation](#utilisation)
-7. [Structure du projet](#structure-du-projet)
-8. [Contribution](#contribution)
-9. [Auteur](#auteur)
-10. [Licence](#licence)
-
 ## Aperçu
 
 SmartParking révolutionne la façon dont les conducteurs trouvent et réservent des places de stationnement. Notre plateforme offre une interface conviviale pour les clients et un système de gestion puissant pour les propriétaires de parkings.
 
-![Vue d'ensemble](images/overview.png)
+![Vue d'ensemble](https://github.com/Abusooma/Smart-Parking/blob/main/cap1.png)
 
 ## Fonctionnalités
 
