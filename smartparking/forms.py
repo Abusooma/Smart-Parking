@@ -50,25 +50,32 @@ class ReservationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance.pk:
             self.fields['region'].initial = self.instance.parking.region
-            self.fields['parking'].queryset = Parking.objects.filter(
-                region=self.instance.parking.region)
-            self.fields['parking'].initial = self.instance.parking
-        elif 'region' in self.data:
+
+        if 'region' in self.data:
             try:
                 region_id = int(self.data.get('region'))
                 self.fields['parking'].queryset = Parking.objects.filter(
                     region_id=region_id)
             except (ValueError, TypeError):
                 pass
+        elif self.instance.pk:
+            self.fields['parking'].queryset = Parking.objects.filter(
+                region=self.instance.parking.region)
 
     def clean(self):
         cleaned_data = super().clean()
+        region = cleaned_data.get('region')
+        parking = cleaned_data.get('parking')
         date_arrive = cleaned_data.get('date_arrive')
         date_sortie = cleaned_data.get('date_sortie')
+
+        if region and parking:
+            if parking.region != region:
+                self.add_error(
+                    'parking', "Le parking sélectionné n'appartient pas à la région choisie.")
 
         if date_arrive and date_sortie and date_arrive > date_sortie:
             raise forms.ValidationError(
                 "La date d'arrivée ne peut pas être postérieure à la date de sortie.")
 
         return cleaned_data
-    
