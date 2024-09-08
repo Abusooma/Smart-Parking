@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 
+
 def clean_email(email):
     try:
         validate_email(email)
@@ -12,9 +13,10 @@ def clean_email(email):
     except ValidationError:
         raise ValueError("Adresse email invalide")
 
+
 def email_for_new_user(request, user, password, path_template):
     try:
-        subject = "Smart Parking"
+        subject = "Smart"
         html_message = render_to_string(path_template, {
             'user': user,
             'password': password,

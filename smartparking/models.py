@@ -41,6 +41,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     is_new_user = models.BooleanField(default=True)
     user_type = models.CharField(max_length=50, choices=USER_TYPE_CHOICES)
+    telephone = models.CharField(max_length=12, blank=True, null=True)
 
     objects = CustomUserManager()
 
@@ -53,6 +54,10 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email or 'N/A'
+    
+    @property
+    def fullname(self):
+        return f"{self.first_name} {self.last_name}"
     
 
 class Region(models.Model):

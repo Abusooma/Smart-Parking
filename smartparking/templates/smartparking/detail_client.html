@@ -3,7 +3,7 @@ du Client {% endblock %} {% block content %}
 <div class="container-fluid dashboard-content">
   <div class="row mb-3">
     <div class="col-md-6">
-      <h2>Détails du client</h2>
+      <h2>Détails du client <strong>{{ client.fullname|default:'Pas encore definie' }}</strong> </h2>
     </div>
     <div class="col-md-6 text-right">
       <a href="{% url 'clients' %}" class="btn btn-secondary">
@@ -18,17 +18,17 @@ du Client {% endblock %} {% block content %}
       <div class="row">
         <div class="col-md-6">
           <p><strong>ID:</strong> {{ client.id }}</p>
-          <p><strong>Email:</strong> {{ client.user.email }}</p>
+          <p><strong>Email:</strong> {{ client.email }}</p>
           <p>
-            <strong>Date d'inscription:</strong> {{ client.user.date_joined|date:"d/m/Y" }}
+            <strong>Date d'inscription:</strong> {{ client.date_joined|date:"d/m/Y" }}
           </p>
         </div>
         <div class="col-md-6">
           <p>
-            <strong>Nombre total de réservations:</strong> {{ client.reservations.count }}
+            <strong>Nombre total de réservations:</strong> {{ reservations.count }}
           </p>
           <p>
-            <strong>Statut du compte:</strong> {% if client.user.is_active %}Actif{% else %}Inactif{% endif %}
+            <strong>Statut du compte:</strong> {% if client.is_active %}Actif{% else %}Inactif{% endif %}
           </p>
         </div>
       </div>
@@ -39,10 +39,9 @@ du Client {% endblock %} {% block content %}
     <div class="card-body">
       <h3 class="card-title">Historique des réservations</h3>
       <div class="table-responsive">
-        <table class="table table-striped">
+        <table class="table table-striped text-center">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Parking</th>
               <th>Date d'arrivée</th>
               <th>Date de sortie</th>
@@ -51,12 +50,11 @@ du Client {% endblock %} {% block content %}
             </tr>
           </thead>
           <tbody>
-            {% for reservation in client.reservations.all %}
+            {% for reservation in reservations %}
             <tr>
-              <td>{{ reservation.id }}</td>
               <td>{{ reservation.parking.nom }}</td>
-              <td>{{ reservation.date_arrive|date:"d/m/Y H:i" }}</td>
-              <td>{{ reservation.date_sortie|date:"d/m/Y H:i" }}</td>
+              <td>{{ reservation.date_arrive|date:"d/m/Y" }}</td>
+              <td>{{ reservation.date_sortie|date:"d/m/Y" }}</td>
               <td>
                 <span
                   class="badge {% if reservation.status == 'active' %}badge-success{% elif reservation.status == 'expired' %}badge-warning{% else %}badge-danger{% endif %}"
@@ -64,7 +62,7 @@ du Client {% endblock %} {% block content %}
                   {{ reservation.get_status_display }}
                 </span>
               </td>
-              <td>{{ reservation.calculate_price|floatformat:2 }} €</td>
+              <td>{{ reservation.calculate_price|floatformat:2 }} TND</td>
             </tr>
             {% empty %}
             <tr>
@@ -78,37 +76,6 @@ du Client {% endblock %} {% block content %}
       </div>
     </div>
   </div>
-
-  {% if request.user.user_type == 'gerant' %}
-  <div class="card mt-4">
-    <div class="card-body">
-      <h3 class="card-title">Statistiques pour vos parkings</h3>
-      <div class="row">
-        {% for parking_stat in parking_stats %}
-        <div class="col-md-4 mb-3">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">{{ parking_stat.nom }}</h5>
-              <p>
-                <strong>Nombre de réservations:</strong> {{ parking_stat.reservation_count }}
-              </p>
-              <p>
-                <strong>Montant total dépensé:</strong> {{ parking_stat.total_amount|floatformat:2 }} €
-              </p>
-            </div>
-          </div>
-        </div>
-        {% empty %}
-        <div class="col-12">
-          <p class="text-muted">
-            Aucun parking géré par vous n'a été réservé par ce client.
-          </p>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-  {% endif %}
 
   <div class="card mt-4">
     <div class="card-body">

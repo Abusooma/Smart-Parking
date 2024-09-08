@@ -58,9 +58,6 @@
             <table class="table table-striped table-responsive {% if request.user.user_type == 'client' %}text-center{% endif %}">
                 <thead>
                     <tr>
-                        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
-                        <th style="width: 25%;">Client</th>
-                        {% endif %}
                         <th style="width: 15%;">Parking</th>
                         <th style="width: 15%;">Date début</th>
                         <th style="width: 15%;">Date fin</th>
@@ -72,9 +69,6 @@
                 <tbody>
                     {% for reservation in reservations %}
                     <tr data-id="{{ reservation.id }}">
-                        {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
-                        <td class="text-truncate" style="max-width: 150px;">{{ reservation.client.email }}</td>
-                        {% endif %}
                         <td class="text-truncate parking text-center" style="max-width: 100px;">{{ reservation.parking.nom }}</td>
                         <td class="date-arrive">{{ reservation.date_arrive|date:"d-m-Y" }}</td>
                         <td class="date-sortie">{{ reservation.date_sortie|date:"d-m-Y" }}</td>
@@ -88,14 +82,12 @@
                             <button class="btn btn-sm btn-info view-reservation" style="margin-right: 4px;" data-id="{{ reservation.id }}">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            {% if request.user.user_type == 'client' %}
                             <button class="btn btn-sm btn-warning modify-reservation mr-1" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}" {% if reservation.status == 'expired' %}disabled{% endif %}>
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-sm btn-danger delete-reservation" data-id="{{ reservation.id }}" data-expired="{{ reservation.status }}" {% if reservation.status == 'expired' %}disabled{% endif %}>
                                 <i class="fas fa-trash"></i>
                             </button>
-                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -281,8 +273,6 @@
 $(document).ready(function () {
     let allParkings = [];
     let currentReservationId;
-    let originalPrice = 0;
-    let newPrice = 0;
 
     // Afficher les détails de la réservation
     $('.view-reservation').on('click', function () {
@@ -293,7 +283,6 @@ $(document).ready(function () {
             success: function (data) {
                 const modalBody = $('#detailReservationModal .modal-body');
                 modalBody.html(`
-                    <p><strong>Client :</strong> ${data.client}</p>
                     <p><strong>Parking :</strong> ${data.parking}</p>
                     <p><strong>Date de début :</strong> ${data.date_arrive.split(' ')[0]}</p>
                     <p><strong>Date de fin :</strong> ${data.date_sortie.split(' ')[0]}</p>
@@ -384,108 +373,14 @@ $(document).ready(function () {
         updateParkingDropdown(regionId);
     });
 
-    // Mettre à jour le calcul du prix et afficher la différence
-    function updatePrice() {
-        const parkingId = $('#parking').val();
-        const dateArrive = $('#date_arrive').val();
-        const dateSortie = $('#date_sortie').val();
-
-        console.log('Updating price with:', { parkingId, dateArrive, dateSortie });
-
-        if (parkingId && dateArrive && dateSortie) {
-            $.ajax({
-                url: '/calculate-price/',
-                method: 'GET',
-                data: {
-                    parking_id: parkingId,
-                    date_arrive: dateArrive,
-                    date_sortie: dateSortie
-                },
-                success: function (data) {
-                    console.log('Price calculation response:', data);
-                    if (data.price !== undefined) {
-                        newPrice = parseFloat(data.price);
-                        const priceDifference = newPrice - originalPrice;
-                        const priceDifferenceElement = $('#price_difference');
-
-                        console.log('Original price:', originalPrice);
-                        console.log('New price:', newPrice);
-                        console.log('Price difference:', priceDifference);
-
-                        if (!isNaN(priceDifference)) {
-                            if (priceDifference > 0) {
-                                priceDifferenceElement.html(`<strong>Supplément à payer:</strong> ${priceDifference.toFixed(2)} TND <br><small>Ce montant sera prélevé après confirmation de la modification.</small>`);
-                                priceDifferenceElement.removeClass('text-success').addClass('text-danger');
-                            } else if (priceDifference < 0) {
-                                priceDifferenceElement.html(`<strong>Montant à rembourser:</strong> ${Math.abs(priceDifference).toFixed(2)} TND <br><small>Ce montant sera crédité sur votre compte après confirmation de la modification.</small>`);
-                                priceDifferenceElement.removeClass('text-danger').addClass('text-success');
-                            } else {
-                                priceDifferenceElement.html('<strong>Aucun changement de prix</strong>');
-                                priceDifferenceElement.removeClass('text-danger text-success');
-                            }
-                        } else {
-                            priceDifferenceElement.html('<strong>Erreur de calcul de prix</strong>');
-                            priceDifferenceElement.removeClass('text-success text-danger');
-                        }
-                    } else {
-                        console.error('Invalid response format:', data);
-                        $('#price_difference').text('Erreur lors du calcul du prix');
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error calculating price:', error);
-                    $('#price_difference').text('Erreur lors du calcul du prix');
-                }
-            });
-        } else {
-            console.log('Missing required fields for price calculation');
-            $('#price_difference').text('');
-        }
-    }
-
     // Modifier le comportement du bouton de confirmation de modification
     $('#confirmerModificationBtn').on('click', function () {
-        const priceDifference = newPrice - originalPrice;
-
-        if (priceDifference > 0) {
-            // Afficher le modal de paiement supplémentaire
-            $('#montantSupplementaire').text(priceDifference.toFixed(2));
-            $('#paiementSupplementaireModal').modal('show');
-        } else if (priceDifference < 0) {
-            // Afficher un message de remboursement et procéder à la modification
-            const message = `Un remboursement de ${Math.abs(priceDifference).toFixed(2)} TND sera effectué pour cette réservation. Le montant sera crédité sur votre compte dans un délai de 3 à 5 jours ouvrables. Voulez-vous continuer ?`;
-            if (confirm(message)) {
-                proceedWithModification();
-            }
-        } else {
-            // Aucun changement de prix, procéder à la modification
-            proceedWithModification();
-        }
-    });
-
-    // Gérer la confirmation du paiement supplémentaire
-    $('#confirmerPaiementBtn').on('click', function () {
-        const numeroCarte = $('#numero_carte').val();
-        const dateExpiration = $('#date_expiration').val();
-        const cvv = $('#cvv').val();
-
-        if (!numeroCarte || !dateExpiration || !cvv) {
-            showAlert('Veuillez remplir tous les champs du formulaire de paiement.', 'warning');
-            return;
-        }
-
-        // Ici, vous pouvez ajouter la logique de traitement du paiement si nécessaire
-        $('#paiementSupplementaireModal').modal('hide');
-        showAlert('Paiement supplémentaire effectué avec succès', 'success');
         proceedWithModification();
     });
 
     function proceedWithModification() {
         const formData = new FormData($('#modifierReservationForm')[0]);
         const reservationId = $('#reservationId').val();
-
-        // Ajouter la différence de prix au formData
-        formData.append('price_difference', (newPrice - originalPrice).toFixed(2));
 
         $.ajax({
             url: `/reservations/${reservationId}/update/`,
@@ -515,17 +410,10 @@ $(document).ready(function () {
         $('#date_arrive').val(data.date_arrive);
         $('#date_sortie').val(data.date_sortie);
         $('#id_matricule').val(data.matricule);
-        originalPrice = parseFloat(data.price); // Stocker le prix original
-        if (isNaN(originalPrice)) {
-            console.error('Invalid original price:', data.price);
-            originalPrice = 0;
-        }
-        console.log('Original price set:', originalPrice);
         // Mettre à jour les dates minimales
         const today = new Date().toISOString().split('T')[0];
         $('#date_arrive').attr('min', today);
         $('#date_sortie').attr('min', data.date_arrive);
-        updatePrice(); // Appeler updatePrice pour initialiser l'affichage du prix
     }
 
     function populateRegions(regions) {
@@ -564,8 +452,6 @@ $(document).ready(function () {
         } else {
             parkingSelect.val(parkingSelect.find('option:first').val());
         }
-        
-        updatePrice();
     }
 
     function updateReservationInTable(reservation) {
@@ -598,28 +484,16 @@ $(document).ready(function () {
         $('#alertContainer').html(alertHtml);
     }
 
-    // Mise à jour du prix lors du changement de dates ou de parking
-    $('#date_arrive, #date_sortie, #parking').on('change', function() {
-        console.log('Field changed:', this.id);
-        if ($('#parking').val() && $('#date_arrive').val() && $('#date_sortie').val()) {
-            updatePrice();
-        }
-    });
-
-   // Assurer que la date de sortie n'est pas antérieure à la date d'arrivée
+    // Assurer que la date de sortie n'est pas antérieure à la date d'arrivée
     $('#date_arrive').on('change', function() {
         const selectedDate = $(this).val();
         $('#date_sortie').attr('min', selectedDate);
         if ($('#date_sortie').val() < selectedDate) {
             $('#date_sortie').val(selectedDate);
         }
-        if ($('#parking').val() && $('#date_sortie').val()) {
-            updatePrice();
-        }
     });
 
-
-   // Initialiser les dates minimales lors de l'ouverture du modal
+    // Initialiser les dates minimales lors de l'ouverture du modal
     $('#modifierReservationModal').on('show.bs.modal', function () {
         const today = new Date().toISOString().split('T')[0];
         $('#date_arrive').attr('min', today);

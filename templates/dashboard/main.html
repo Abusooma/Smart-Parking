@@ -55,7 +55,8 @@
     <li class="{% if request.resolver_match.url_name == 'gerants' %}active{% endif %}">
       <a href="{% url 'gerants' %}"><i class="fas fa-user-tie"></i> Gérants</a>
     </li>
-    {% elif request.user.user_type == 'gerant' %}
+    {% endif %}
+    {% if request.user.user_type == 'admin' or request.user.user_type == 'gerant' %}
     <li class="{% if request.resolver_match.url_name == 'clients' %}active{% endif %}">
       <a href="{% url 'clients' %}"><i class="fas fa-users"></i> Clients</a>
     </li>
@@ -64,8 +65,8 @@
     <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
       <a href="{% url 'reservations' %}"><i class="fas fa-calendar-check"></i> Réservations clients</a>
     </li>
-    <li class="{% if request.resolver_match.url_name == 'mes_reservations' %}active{% endif %}">
-      <a href=""><i class="fas fa-bookmark"></i> Mes réservations</a>
+    <li class="{% if request.resolver_match.url_name == 'gerant-reservation' %}active{% endif %}">
+      <a href="{% url 'gerant-reservation' %}"><i class="fas fa-bookmark"></i> Mes réservations</a>
     </li>
     {% elif request.user.user_type == 'client' %}
     <li class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">
