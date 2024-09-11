@@ -29,12 +29,15 @@
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Prenom</th>
+                        <th>Nom</th>
+                        <th>Telephone</th>
                         <th>Email</th>
                         <th>Date d'inscription</th>
                         {% if request.user.user_type == 'gerant' %}
                         <th>Nombre de réservations</th>
-                        {% endif %}
                         <th>Actions</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody id="clientTableBody">
@@ -69,7 +72,6 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-danger" id="confirmBlockButton">Bloquer</button>
             </div>
         </div>
     </div>
@@ -117,6 +119,9 @@
                     const row = `
                         <tr {% if request.user.user_type == 'admin' %}class="text-center" {% endif %}>
                             <td>${client.id}</td>
+                            <td>${client.first_name ?? 'Non défini'}</td>
+                            <td>${client.last_name ?? 'Non défini'}</td>
+                            <td>${client.telephone ?? 'Non défini'}</td>
                             <td>${client.email}</td>
                             <td>${client.date_inscription}</td>
                             {% if request.user.user_type == 'gerant' %}
@@ -128,9 +133,6 @@
                                     <i class="fas fa-eye"></i> Détails
                                 </a>
                                 {% endif %}
-                                <button class="btn btn-sm btn-danger block-client-btn" data-client-id="${client.id}">
-                                    <i class="fas fa-ban"></i> Bloquer
-                                </button>
                             </td>
                         </tr>
                     `;

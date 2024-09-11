@@ -41,6 +41,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     is_new_user = models.BooleanField(default=True)
     user_type = models.CharField(max_length=50, choices=USER_TYPE_CHOICES)
+    telephone = models.CharField(max_length=12, blank=True, null=True)
 
     objects = CustomUserManager()
 
@@ -53,7 +54,15 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email or 'N/A'
+<<<<<<< HEAD
 
+=======
+    
+    @property
+    def fullname(self):
+        return f"{self.first_name} {self.last_name}"
+    
+>>>>>>> ca4308e629c4fb0c0fef7154ef48de1cc89d7d20
 
 class Region(models.Model):
     nom = models.CharField(max_length=150)
@@ -107,7 +116,7 @@ class Reservation(models.Model):
         ('cancel', 'annulée')
     ]
     parking = models.ForeignKey(Parking, on_delete=models.CASCADE, blank=True, related_name='reservations')
-    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='reservations')
     date_arrive = models.DateTimeField()
     date_sortie = models.DateTimeField()
     status = models.CharField(max_length=25, choices=STATUS, default='active')
@@ -127,9 +136,12 @@ class Reservation(models.Model):
 
     @property
     def calculate_price(self):
+        if self.client and self.client.user_type == 'gerant' and self.parking.gerant and self.parking.gerant.user == self.client:
+            return 0
+        
         duration = (self.date_sortie - self.date_arrive).days + 1
         if duration <= 0:
-            duration = 1
+            duration = 1 
 
         return float(self.parking.tarif) * duration
 
@@ -139,7 +151,7 @@ class Reservation(models.Model):
 
 class Matricule(models.Model):
     matricule = models.CharField(max_length=30)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.matricule

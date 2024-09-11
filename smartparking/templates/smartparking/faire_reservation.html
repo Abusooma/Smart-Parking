@@ -291,7 +291,7 @@
 {% block extra_script %}
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    $(document).ready(function () {
+  $(document).ready(function () {
   // Gestion de la recherche
   $("#searchForm").submit(function (e) {
     e.preventDefault();
@@ -387,10 +387,25 @@
   // Modification du comportement du bouton "Confirmer la réservation"
   $("#confirmReservation").click(function () {
     $("#reservationModal").modal("hide");
-    $("#paymentModal").modal("show");
+    
+    // Vérifier si l'utilisateur est un gérant
+    axios.get('{% url "check_user_type" %}')
+      .then(function (response) {
+        if (response.data.user_type === 'gerant') {
+          // Si c'est un gérant, passer directement à la confirmation
+          processReservation();
+        } else {
+          // Si ce n'est pas un gérant, afficher le modal de paiement
+          $("#paymentModal").modal("show");
+        }
+      })
+      .catch(function (error) {
+        console.error("Error checking user type:", error);
+        alert("Une erreur est survenue lors de la vérification du type d'utilisateur.");
+      });
   });
 
-  // Gestion de la validation du paiement
+  // Gestion de la validation du paiement (pour les non-gérants)
   $("#confirmPayment").click(function () {
     // Validation basique des champs de paiement
     if (
@@ -399,31 +414,33 @@
       $("#cvv").val()
     ) {
       $("#paymentModal").modal("hide");
-
-      // Simulation de l'appel au backend pour la réservation
-      const formData = new FormData($("#reservationForm")[0]);
-
-      axios
-        .post('{% url "reserver" %}', formData)
-        .then(function (response) {
-          if (response.data.status === "success") {
-            $("#accessCode").text(response.data.access_code);
-            $("#confirmationTotalPrice").text(
-              response.data.total_price.toFixed(2)
-            );
-            $("#confirmationModal").modal("show");
-          } else {
-            alert(response.data.message);
-          }
-        })
-        .catch(function (error) {
-          console.error("Error:", error);
-          alert("Une erreur est survenue lors de la réservation.");
-        });
+      processReservation();
     } else {
       alert("Veuillez remplir tous les champs de paiement.");
     }
   });
+
+  // Fonction pour traiter la réservation
+  function processReservation() {
+    const formData = new FormData($("#reservationForm")[0]);
+
+    axios.post('{% url "reserver" %}', formData)
+      .then(function (response) {
+        if (response.data.status === "success") {
+          $("#accessCode").text(response.data.access_code);
+          $("#confirmationTotalPrice").text(
+            response.data.total_price.toFixed(2)
+          );
+          $("#confirmationModal").modal("show");
+        } else {
+          alert(response.data.message);
+        }
+      })
+      .catch(function (error) {
+        console.error("Error:", error);
+        alert("Une erreur est survenue lors de la réservation.");
+      });
+  }
 
   // Chargement des matricules pour l'autocomplétion
   axios
