@@ -54,15 +54,11 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email or 'N/A'
-<<<<<<< HEAD
 
-=======
     
     @property
     def fullname(self):
         return f"{self.first_name} {self.last_name}"
-    
->>>>>>> ca4308e629c4fb0c0fef7154ef48de1cc89d7d20
 
 class Region(models.Model):
     nom = models.CharField(max_length=150)
