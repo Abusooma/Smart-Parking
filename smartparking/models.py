@@ -53,7 +53,7 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email or 'N/A'
-    
+
 
 class Region(models.Model):
     nom = models.CharField(max_length=150)
@@ -61,19 +61,21 @@ class Region(models.Model):
     def __str__(self):
         return self.nom or 'N/A'
 
+
 class Client(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='client_profile')
 
     def __str__(self):
         return f"{self.user.email} - Client"
-    
+
 
 class Gerant(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='gerant_profile')
 
     def __str__(self):
         return f"{self.user.email} - Gérant"
+
 
 class Parking(models.Model):
     gerant = models.ForeignKey(Gerant, on_delete=models.CASCADE, null=True)
@@ -86,7 +88,7 @@ class Parking(models.Model):
     def nombre_place_dispo(self):
         place_reservees = Reservation.objects.filter(parking=self, status='active').count()
         return self.nombre_place - place_reservees
-    
+
     @property
     def taux_occupation(self):
         if self.nombre_place == 0:
@@ -100,7 +102,7 @@ class Parking(models.Model):
 
 class Reservation(models.Model):
     STATUS = [
-        ('active', 'active'), 
+        ('active', 'active'),
         ('expired', 'expirée'),
         ('cancel', 'annulée')
     ]
@@ -118,7 +120,7 @@ class Reservation(models.Model):
             self.status = 'expired'
 
     def generate_access_code(self, lenth_digit=4):
-        digits = random.choices(string.digits, k=lenth_digit) 
+        digits = random.choices(string.digits, k=lenth_digit)
         code = digits
         random.shuffle(code)
         return ''.join(code)
@@ -129,7 +131,7 @@ class Reservation(models.Model):
         if duration <= 0:
             duration = 1
 
-        return float(self.parking.tarif) * duration 
+        return float(self.parking.tarif) * duration
 
     def __str__(self):
         return f"Réservation {self.id} pour {self.client} au {self.parking}"
@@ -141,5 +143,3 @@ class Matricule(models.Model):
 
     def __str__(self):
         return self.matricule
-    
-
