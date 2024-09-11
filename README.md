@@ -1,6 +1,6 @@
 # SmartParking
 
-![Logo SmartParking](https://github.com/Abusooma/Smart-Parking/blob/main/cap1.png)
+![Logo SmartParking](https://github.com/Abusooma/Smart-Parking/blob/main/.github/cap1.png)
 
 SmartParking est une plateforme innovante de réservation de parkings développée avec Django. Elle offre aux clients la possibilité de réserver facilement des places de stationnement en fonction de leur localisation.
 
@@ -8,7 +8,7 @@ SmartParking est une plateforme innovante de réservation de parkings développ�
 
 SmartParking révolutionne la façon dont les conducteurs trouvent et réservent des places de stationnement. Notre plateforme offre une interface conviviale pour les clients et un système de gestion puissant pour les propriétaires de parkings.
 
-![Vue d'ensemble](https://github.com/Abusooma/Smart-Parking/blob/main/cap1.png)
+![Vue d'ensemble](https://github.com/Abusooma/Smart-Parking/blob/main/.github/cap1.png)
 
 ## Fonctionnalités
 
@@ -22,15 +22,15 @@ SmartParking révolutionne la façon dont les conducteurs trouvent et réservent
 ## Captures d'écran
 
 ### Page d'accueil
-![Page d'accueil](https://github.com/Abusooma/Smart-Parking/blob/main/cap1.png)
+![Page d'accueil](https://github.com/Abusooma/Smart-Parking/blob/main/.github/cap1.png)
 *Une interface intuitive pour commencer votre recherche de parking*
 
 ### Interface de réservation
-![Recherche de parking](https://github.com/Abusooma/Smart-Parking/blob/main/cap2.png)
+![Recherche de parking](https://github.com/Abusooma/Smart-Parking/blob/main/.github/cap2.png)
 *Trouvez facilement un parking près de votre destination*
 
 ### Tableau de bord
-![Tableau de bord gérant](https://github.com/Abusooma/Smart-Parking/blob/main/cap3.png)
+![Tableau de bord gérant](https://github.com/Abusooma/Smart-Parking/blob/main/.github/cap3.png)
 *Outils puissants pour les gérants de parking*
 
 ## Installation
