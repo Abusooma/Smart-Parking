@@ -55,7 +55,15 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email or 'N/A'
+<<<<<<< HEAD
 
+=======
+    
+    @property
+    def fullname(self):
+        return f"{self.first_name} {self.last_name}"
+    
+>>>>>>> 5440782 (update folder Smartparking)
 
 class Region(models.Model):
     nom = models.CharField(max_length=150)
