@@ -57,4 +57,7 @@ urlpatterns = [
     path('dashboard/parametre/', views.setup_parameter, name='parametres'),
     path('update-user-info/', views.update_user_info, name='update_user_info'),
     path('change-password/', views.change_password, name='change_password'),
+
+    # Chemin Pour le endpoint
+    path("parking/endpoint_url/", views.verify_access, name="endpoint")
 ]

@@ -42,6 +42,6 @@ def email_confirm_reservation(request, user, reservation):
         html_message = render_to_string(
             'smartparking/emails/email_confirm_reservation.html', context)
         plain_message = strip_tags(html_message)
-        send_mail(subject, plain_message, settings.EMAIL_HOST_USER, [validated_email], html_message=html_message)
+        send_mail(subject, plain_message, settings.EMAIL_HOST_USER, [validated_email], html_message=html_message, fail_silently=True)
     except Exception as e:
-        raise ValueError(e)
+        print("Erreur")

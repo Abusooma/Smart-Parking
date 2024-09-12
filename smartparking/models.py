@@ -4,7 +4,8 @@ import string
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 class CustomUserManager(BaseUserManager):
@@ -90,8 +91,15 @@ class Parking(models.Model):
     tarif = models.DecimalField(max_digits=10, decimal_places=2)
     actif = models.BooleanField(default=True)
 
-    def nombre_place_dispo(self):
-        place_reservees = Reservation.objects.filter(parking=self, status='active').count()
+    def nombre_place_dispo(self, date=None):
+        if date is None:
+            date = timezone.now().date()
+        place_reservees = Reservation.objects.filter(
+            parking=self,
+            status='active',
+            date_arrive__lte=date,
+            date_sortie__gte=date
+        ).count()
         return self.nombre_place - place_reservees
 
     @property
@@ -144,6 +152,11 @@ class Reservation(models.Model):
     def __str__(self):
         return f"Réservation {self.id} pour {self.client} au {self.parking}"
 
+
+class EntreSortie(models.Model):
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name="entrees_sorties")
+    heure_entree = models.DateTimeField(blank=True, null=True)
+    heure_sortie = models.DateTimeField(blank=True, null=True)
 
 class Matricule(models.Model):
     matricule = models.CharField(max_length=30)
