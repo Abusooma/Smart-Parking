@@ -8,4 +8,4 @@ try:
 except requests.exceptions.RequestException as e:
     print(f"Une erreur HTTP est survenue: {e}")
 
-print(responses.json())
+print(responses.status_code)
