@@ -153,11 +153,6 @@ class Reservation(models.Model):
         return f"Réservation {self.id} pour {self.client} au {self.parking}"
 
 
-class EntreSortie(models.Model):
-    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name="entrees_sorties")
-    heure_entree = models.DateTimeField(blank=True, null=True)
-    heure_sortie = models.DateTimeField(blank=True, null=True)
-
 class Matricule(models.Model):
     matricule = models.CharField(max_length=30)
     client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
