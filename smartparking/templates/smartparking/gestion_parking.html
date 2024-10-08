@@ -15,68 +15,70 @@
             </button>
         </div>
         {% endif %}
-        <div {% if request.user.user_type == 'gerant' %} class="col-md-6" {% endif %}>
-            <form class="form-inline justify-content-md-end" id="searchForm">
-                <input class="form-control mr-sm-2" type="search" placeholder="Rechercher un parking" aria-label="Search" id="searchInput">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Rechercher</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="messageContainer" class="mb-4"></div>
-
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Région</th>
-                    <th>Nombre de places</th>
-                    <th>Places disponibles</th>
-                    <th>Tarif</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="parkingTableBody">
-                {% for parking in parkings %}
-                <tr id="parking-{{ parking.id }}">
-                    <td>{{ parking.nom }}</td>
-                    <td>{{ parking.region.nom }}</td>
-                    <td>{{ parking.nombre_place }}</td>
-                    <td>{{ parking.nombre_place_dispo }}</td>
-                    <td>{{ parking.tarif }} Dinars</td>
-                    <td>
-                        <span class="badge {% if parking.actif %}badge-success{% else %}badge-danger{% endif %}">
-                            {{ parking.actif|yesno:"Actif,Inactif" }}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-info" onclick="showParkingDetails({{ parking.id }})">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
-                        {% if request.user.user_type == 'gerant' %}
-                        <button class="btn btn-sm btn-primary" onclick="showEditParkingModal({{ parking.id }})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal({{ parking.id }})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center">Aucun parking trouvé.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div {% if request.user.user_type == "gerant" %} class="col-md-6" {% endif %}>
+        <form class="form-inline justify-content-md-end" id="searchForm">
+            <input class="form-control mr-sm-2" type="search" placeholder="Rechercher un parking" aria-label="Search"
+                   id="searchInput">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Rechercher</button>
+        </form>
     </div>
 </div>
 
+<div id="messageContainer" class="mb-4"></div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Région</th>
+            <th>Nombre de places</th>
+            <th>Places disponibles</th>
+            <th>Tarif</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="parkingTableBody">
+        {% for parking in parkings %}
+        <tr id="parking-{{ parking.id }}">
+            <td>{{ parking.nom }}</td>
+            <td>{{ parking.region.nom }}</td>
+            <td>{{ parking.nombre_place }}</td>
+            <td>{{ parking.nombre_place_dispo }}</td>
+            <td>{{ parking.tarif }} Dinars</td>
+            <td>
+                        <span class="badge {% if parking.actif %}badge-success{% else %}badge-danger{% endif %}">
+                            {{ parking.actif|yesno:"Actif,Inactif" }}
+                        </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="showParkingDetails({{ parking.id }})">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                {% if request.user.user_type == 'gerant' %}
+                <button class="btn btn-sm btn-primary" onclick="showEditParkingModal({{ parking.id }})">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="showDeleteParkingModal({{ parking.id }})">
+                    <i class="fas fa-trash"></i>
+                </button>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="text-center">Aucun parking trouvé.</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
 <!-- Modal pour ajouter un parking -->
-<div class="modal fade" id="addParkingModal" tabindex="-1" role="dialog" aria-labelledby="addParkingModalLabel" aria-hidden="true">
+<div class="modal fade" id="addParkingModal" tabindex="-1" role="dialog" aria-labelledby="addParkingModalLabel"
+     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -96,7 +98,7 @@
                         <label for="region">Région</label>
                         <select class="form-control" id="region" name="region" required>
                             {% for region in regions %}
-                                <option value="{{ region.id }}">{{ region.nom }}</option>
+                            <option value="{{ region.id }}">{{ region.nom }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -105,7 +107,7 @@
                         <input type="number" class="form-control" id="nombre_place" name="nombre_place" required>
                     </div>
                     <div class="form-group">
-                        <label for="tarif">Tarif (€)</label>
+                        <label for="tarif">Tarif (TDN)</label>
                         <input type="number" step="0.01" class="form-control" id="tarif" name="tarif" required>
                     </div>
                     <div class="form-group">
@@ -125,7 +127,8 @@
 </div>
 
 <!-- Modal pour éditer un parking -->
-<div class="modal fade" id="editParkingModal" tabindex="-1" role="dialog" aria-labelledby="editParkingModalLabel" aria-hidden="true">
+<div class="modal fade" id="editParkingModal" tabindex="-1" role="dialog" aria-labelledby="editParkingModalLabel"
+     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -146,7 +149,7 @@
                         <label for="edit_region">Région</label>
                         <select class="form-control" id="edit_region" name="region" required>
                             {% for region in regions %}
-                                <option value="{{ region.id }}">{{ region.nom }}</option>
+                            <option value="{{ region.id }}">{{ region.nom }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -175,13 +178,15 @@
 </div>
 
 <!-- Modal pour les détails du parking -->
-<div class="modal fade" id="parkingDetailsModal" tabindex="-1" role="dialog" aria-labelledby="parkingDetailsModalLabel" aria-hidden="true">
+<div class="modal fade" id="parkingDetailsModal" tabindex="-1" role="dialog" aria-labelledby="parkingDetailsModalLabel"
+     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="parkingDetailsModalLabel">Détails du parking</h5>
-                <button type="button" class="<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="<button type=" button
+                " class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body" id="parkingDetailsContent">
@@ -195,7 +200,8 @@
 </div>
 
 <!-- Modal pour supprimer un parking -->
-<div class="modal fade" id="deleteParkingModal" tabindex="-1" role="dialog" aria-labelledby="deleteParkingModalLabel" aria-hidden="true">
+<div class="modal fade" id="deleteParkingModal" tabindex="-1" role="dialog" aria-labelledby="deleteParkingModalLabel"
+     aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">

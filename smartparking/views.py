@@ -13,7 +13,7 @@ from django.db.models import F
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
-from .models import Client, Reservation, Matricule, EntreSortie
+from .models import Client, Reservation, Matricule
 from django.db.models import Sum, Count
 from django.db.models import Q
 from .models import Client
