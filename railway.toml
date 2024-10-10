@@ -1,8 +1,11 @@
 [build]
-   builder = "nixpacks"
-   buildCommand = "python manage.py collectstatic --no-input"
+builder = "nixpacks"
+buildCommand = "python manage.py collectstatic --no-input"
 
-   [deploy]
-   startCommand = "python manage.py migrate && gunicorn smartparkingproject.wsgi"
-   healthcheckPath = "/"
-   healthcheckTimeout = 100
+[deploy]
+startCommand = "python manage.py makemigrations && python manage.py migrate && gunicorn smartparkingproject.wsgi --bind 0.0.0.0:$PORT --timeout 120"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+
+[deploy.envs]
+PYTHONUNBUFFERED = "1"
