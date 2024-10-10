@@ -3,6 +3,6 @@
    buildCommand = "python manage.py collectstatic --no-input"
 
    [deploy]
-   startCommand = "python manage.py migrate && gunicorn votre_projet.wsgi"
+   startCommand = "python manage.py migrate && gunicorn smartparkingproject.wsgi"
    healthcheckPath = "/"
    healthcheckTimeout = 100
