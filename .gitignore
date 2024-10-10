@@ -161,6 +161,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -338,3 +339,5 @@ cython_debug/
 =======
 __pycache__/
 >>>>>>> b922509 (Add github folder)
+=======
+>>>>>>> e54a4e5 (Add: file Procfile for deployment on Railway)
