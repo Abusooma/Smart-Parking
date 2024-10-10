@@ -1,0 +1,8 @@
+[build]
+   builder = "nixpacks"
+   buildCommand = "python manage.py collectstatic --no-input"
+
+   [deploy]
+   startCommand = "python manage.py migrate && gunicorn votre_projet.wsgi"
+   healthcheckPath = "/"
+   healthcheckTimeout = 100
