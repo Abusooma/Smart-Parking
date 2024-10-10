@@ -43,7 +43,7 @@ except locale.Error:
     locale.setlocale(locale.LC_ALL, '')
 
 # Configuration de l'environnement pour Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'votre_projet.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smartparkingproject.settings')
 
 # Activation de la langue française pour Django
 translation.activate('fr')
