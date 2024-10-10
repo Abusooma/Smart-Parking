@@ -10,29 +10,32 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from django.core.mail.utils import DNS_NAME
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Charger les Variables d'environnement
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l@og^f&ms4un&!4t5)u@@^#t(f7ds21ssp(_gd77#womuzn2bc'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
-
 
 # Application definition
 
@@ -76,18 +79,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'smartparkingproject.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'smartparking_db',
-        'USER': 'SmartParking',
-        'PASSWORD': 'Smartp@rking216',
-        'HOST': '127.0.0.1',
-        'PORT': '5433'
+        'NAME': os.environ.get('DB_NAME') or os.environ.get('LOCAL_DB_NAME', 'smartparking_db'),
+        'USER': os.environ.get('DB_USER') or os.environ.get('LOCAL_DB_USER', 'SmartParking'),
+        'PASSWORD': os.environ.get('DB_PASSWORD') or os.environ.get('LOCAL_DB_PASSWORD', 'Smartp@rking216'),
+        'HOST': os.environ.get('DB_HOST') or os.environ.get('LOCAL_DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT') or os.environ.get('LOCAL_DB_PORT', '5433'),
     }
 }
 
@@ -98,8 +100,6 @@ EMAIL_HOST_USER = 'soumahaboubacarsopra@gmail.com'
 EMAIL_HOST_PASSWORD = 'hlag jybx aqtn qrby'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -123,7 +123,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -137,7 +136,6 @@ USE_TZ = True
 
 # URL DE LA VUE DE CONNEXION
 LOGIN_URL = '/login/'
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
