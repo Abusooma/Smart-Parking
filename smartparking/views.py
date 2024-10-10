@@ -33,11 +33,20 @@ from .utils import generate_password, format_date
 from .emails import email_for_new_user, email_confirm_reservation
 from .forms import CustomLoginForm, ReservationForm
 from django.contrib.auth import logout, login, authenticate
+from django.utils import translation
 
 # Paramètres de configuration d'encodage des textes en Français
-os.environ['LC_ALL'] = 'fr_FR.UTF-8'
-os.environ['LANG'] = 'fr_FR.UTF-8'
-locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+try:
+    locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+except locale.Error:
+    # Si le locale français n'est pas disponible, utilisez le locale par défaut
+    locale.setlocale(locale.LC_ALL, '')
+
+# Configuration de l'environnement pour Django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'votre_projet.settings')
+
+# Activation de la langue française pour Django
+translation.activate('fr')
 
 User = get_user_model()
 
